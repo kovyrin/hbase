@@ -18,11 +18,12 @@ include Java
 # Some goodies for hirb. Should these be left up to the user's discretion?
 require 'irb/completion'
 
-# Add the $HBASE_HOME/bin directory, the location of this script, to the ruby
+# Add the $HBASE_HOME/lib/ruby directory to the ruby
 # load path so I can load up my HBase ruby modules
-$LOAD_PATH.unshift File.dirname($PROGRAM_NAME)
+$LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "lib", "ruby")
+
 # Require formatter
-require 'Formatter'
+require 'hbase/shell/formatter'
 
 # See if there are args for this shell. If any, read and then strip from ARGV
 # so they don't go through to irb.  Output shell 'usage' if user types '--help'
@@ -81,8 +82,9 @@ logger = org.apache.log4j.Logger.getLogger("org.apache.zookeeper")
 logger.setLevel(logLevel);
 logger = org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase")
 logger.setLevel(logLevel);
+
 # Require HBase now after setting log levels
-require 'HBase'
+require 'hbase/shell/hbase'
 
 # Setup the HBase module.  Create a configuration.
 # Turn off retries in hbase and ipc.  Human doesn't want to wait on N retries.
