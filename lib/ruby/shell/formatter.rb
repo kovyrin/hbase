@@ -25,7 +25,7 @@ module Formatter
       row(args, false, widths) if args.length > 0
       @rowCount = 0
     end
-    
+
     # Output a row.
     # Inset is whether or not to offset row by a space.
     def row(args = [], inset = true, widths = [])
@@ -116,7 +116,7 @@ module Formatter
       @out.puts("%d row(s) in %.4f seconds" % [rowCount, Time.now - startTime])
     end
   end
-     
+
 
   class Console < Formatter
   end
@@ -141,5 +141,4 @@ module Formatter
     formatter.footer(now)
   end
 end
-
 
