@@ -1,8 +1,6 @@
 module IRB
   # Subclass of IRB so can intercept methods
   class HIRB < Irb
-    attr_accessor :shell
-
     def initialize
       # This is ugly.  Our 'help' method above provokes the following message
       # on irb construction: 'irb: warn: can't alias help from irb_help.'
