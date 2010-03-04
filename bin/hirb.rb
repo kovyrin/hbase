@@ -72,11 +72,6 @@ for arg in found
   ARGV.delete(arg)
 end
 
-# Presume console format.
-# Formatter takes an :output_stream parameter, if you don't want STDOUT.
-@formatter = Formatter::Console.new(:format_width => format_width)
-# TODO, etc.  @formatter = Formatter::XHTML.new(STDOUT)
-
 # Set logging level to avoid verboseness
 org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(log_level);
 org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(log_level);
@@ -84,15 +79,31 @@ org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(log_level)
 # Require HBase now after setting log levels
 require 'hbase'
 
-# Setup the HBase module.  Create a configuration.
-# Turn off retries in hbase and ipc.  Human doesn't want to wait on N retries.
-@configuration = org.apache.hadoop.hbase.HBaseConfiguration.new()
-@configuration.setInt("hbase.client.retries.number", 7)
-@configuration.setInt("ipc.client.connect.max.retries", 3)
+# Load hbase shell
+require 'shell'
 
-# Do lazy create of admin because if we are pointed at bad master, it will hang
-# shell on startup trying to connect.
-@admin = nil
+# Presume console format.
+# Formatter takes an :output_stream parameter, if you don't want STDOUT.
+@formatter = Formatter::Console.new(:format_width => format_width)
+
+# Setup the HBase module.  Create a configuration.
+@hbase = Hbase::Hbase.new(@formatter)
+
+# Setup console
+@shell = Shell::Shell.new(@hbase)
+
+# Add commands to this namespace
+@shell.export_commands(self)
+
+# Add help command
+def help(command = nil)
+  @shell.help(command)
+end
+
+# Backwards compatibility method
+def tools
+  @shell.help_group('tools')
+end
 
 # Promote hbase constants to be constants of this module so can
 # be used bare as keys in 'create', 'alter', etc. To see constants
@@ -111,51 +122,18 @@ promote_constants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
 promote_constants(org.apache.hadoop.hbase.HTableDescriptor.constants)
 promote_constants(HBase.constants)
 
-# Load all the hbase shell commands
-require 'shell'
-
 # If script2run, try running it.  Will go on to run the shell unless
 # script calls 'exit' or 'exit 0' or 'exit errcode'.
 load(script2run) if script2run
 
 # Output a banner message that tells users where to go for help
-print_banner
+@shell.print_banner
 
 require "irb"
+require 'irb/hirb'
 
 module IRB
-  # Subclass of IRB so can intercept methods
-  class HIRB < Irb
-    def initialize
-      # This is ugly.  Our 'help' method above provokes the following message
-      # on irb construction: 'irb: warn: can't alias help from irb_help.'
-      # Below, we reset the output so its pointed at /dev/null during irb
-      # construction just so this message does not come out after we emit
-      # the banner.  Other attempts at playing with the hash of methods
-      # down in IRB didn't seem to work. I think the worst thing that can
-      # happen is the shell exiting because of failed IRB construction with
-      # no error (though we're not blanking STDERR)
-      begin
-        f = File.open("/dev/null", "w")
-        $stdout = f
-        super
-      ensure
-        f.close()
-        $stdout = STDOUT
-      end
-    end
-
-    def output_value
-      # Suppress output if last_value is 'nil'
-      # Otherwise, when user types help, get ugly 'nil'
-      # after all output.
-      if @context.last_value != nil
-        super
-      end
-    end
-  end
-
-  def IRB.start(ap_path = nil)
+  def self.start(ap_path = nil)
     $0 = File::basename(ap_path, ".rb") if ap_path
 
     IRB.setup(ap_path)
