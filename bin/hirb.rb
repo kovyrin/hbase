@@ -23,7 +23,7 @@ require 'irb/completion'
 $LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "lib", "ruby")
 
 # Require formatter
-require 'hbase/shell/formatter'
+require 'shell/formatter'
 
 # See if there are args for this shell. If any, read and then strip from ARGV
 # so they don't go through to irb.  Output shell 'usage' if user types '--help'
@@ -37,7 +37,7 @@ found = []
 format = 'console'
 format_width = 110
 script2run = nil
-logLevel = org.apache.log4j.Level::ERROR  
+log_level = org.apache.log4j.Level::ERROR
 for arg in ARGV
   if arg =~ /^--format=(.+)/i
     format = $1
@@ -56,9 +56,9 @@ for arg in ARGV
     puts cmdline_help
     exit
   elsif arg == '-d' || arg == '--debug'
-    logLevel = org.apache.log4j.Level::DEBUG
+    log_level = org.apache.log4j.Level::DEBUG
     $fullBackTrace = true
-    puts "Setting DEBUG log level..."  
+    puts "Setting DEBUG log level..."
   else
     # Presume it a script. Save it off for running later below
     # after we've set up some environment.
@@ -78,13 +78,11 @@ end
 # TODO, etc.  @formatter = Formatter::XHTML.new(STDOUT)
 
 # Set logging level to avoid verboseness
-logger = org.apache.log4j.Logger.getLogger("org.apache.zookeeper")
-logger.setLevel(logLevel);
-logger = org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase")
-logger.setLevel(logLevel);
+org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(log_level);
+org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(log_level);
 
 # Require HBase now after setting log levels
-require 'hbase/shell/hbase'
+require 'shell/hbase'
 
 # Setup the HBase module.  Create a configuration.
 # Turn off retries in hbase and ipc.  Human doesn't want to wait on N retries.
@@ -100,18 +98,18 @@ require 'hbase/shell/hbase'
 # be used bare as keys in 'create', 'alter', etc. To see constants
 # in IRB, type 'Object.constants'. Don't promote defaults because
 # flattens all types to String.  Can be confusing.
-def promoteConstants(constants)
+def promote_constants(constants)
   # The constants to import are all in uppercase
-  for c in constants
-    if c == c.upcase
-      eval("%s = \"%s\"" % [c, c]) unless c =~ /DEFAULT_.*/
-    end
+  constants.each do |c|
+    next if c =~ /DEFAULT_.*/ || c != c.upcase
+    next if eval("defined?(#{c})")
+    eval("#{c} = '#{c}'")
   end
 end
-promoteConstants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
-promoteConstants(org.apache.hadoop.hbase.HTableDescriptor.constants)
-promoteConstants(HBase.constants)
 
+promote_constants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
+promote_constants(org.apache.hadoop.hbase.HTableDescriptor.constants)
+promote_constants(HBase.constants)
 
 # Start of the hbase shell commands.
 
@@ -123,7 +121,7 @@ def tools
 HBASE SURGERY TOOLS:
  close_region    Close a single region. Optionally specify regionserver.
                  Examples:
-                 
+
                  hbase> close_region 'REGIONNAME'
                  hbase> close_region 'REGIONNAME', 'REGIONSERVER_IP:PORT'
 
@@ -133,9 +131,9 @@ HBASE SURGERY TOOLS:
  disable_region  Disable a single region
 
  enable_region   Enable a single region. For example:
-  
+
                  hbase> enable_region 'REGIONNAME'
- 
+
  flush           Flush all regions in passed table or pass a region row to
                  flush an individual region.  For example:
 
@@ -168,12 +166,12 @@ HBASE SHELL COMMANDS:
  alter     Alter column family schema;  pass table name and a dictionary
            specifying new column family schema. Dictionaries are described
            below in the GENERAL NOTES section.  Dictionary must include name
-           of column family to alter.  For example, 
-           
+           of column family to alter.  For example,
+
            To change or add the 'f1' column family in table 't1' from defaults
            to instead keep a maximum of 5 cell VERSIONS, do:
            hbase> alter 't1', {NAME => 'f1', VERSIONS => 5}
-           
+
            To delete the 'f1' column family in table 't1', do:
            hbase> alter 't1', {NAME => 'f1', METHOD => 'delete'}
 
@@ -182,12 +180,12 @@ HBASE SHELL COMMANDS:
 
            For example, to change the max size of a family to 128MB, do:
            hbase> alter 't1', {METHOD => 'table_att', MAX_FILESIZE => '134217728'}
-           
+
  count     Count the number of rows in a table. This operation may take a LONG
            time (Run '$HADOOP_HOME/bin/hadoop jar hbase.jar rowcount' to run a
            counting mapreduce job). Current count is shown every 1000 rows by
            default. Count interval may be optionally specified. Examples:
-           
+
            hbase> count 't1'
            hbase> count 't1', 100000
 
@@ -209,12 +207,12 @@ HBASE SHELL COMMANDS:
            timestamp coordinates.  Deletes must match the deleted cell's
            coordinates exactly.  When scanning, a delete cell suppresses older
            versions. Takes arguments like the 'put' command described below
- 
- deleteall Delete all cells in a given row; pass a table name, row, and optionally 
+
+ deleteall Delete all cells in a given row; pass a table name, row, and optionally
            a column and timestamp
 
  disable   Disable the named table: e.g. "hbase> disable 't1'"
- 
+
  drop      Drop the named table. Table must first be disabled. If table has
            more than one region, run a major compaction on .META.:
 
@@ -254,27 +252,27 @@ HBASE SHELL COMMANDS:
 
  tools     Listing of hbase surgery tools
 
- scan      Scan a table; pass table name and optionally a dictionary of scanner 
-           specifications.  Scanner specifications may include one or more of 
-           the following: LIMIT, STARTROW, STOPROW, TIMESTAMP, or COLUMNS.  If 
-           no columns are specified, all columns will be scanned.  To scan all 
-           members of a column family, leave the qualifier empty as in 
+ scan      Scan a table; pass table name and optionally a dictionary of scanner
+           specifications.  Scanner specifications may include one or more of
+           the following: LIMIT, STARTROW, STOPROW, TIMESTAMP, or COLUMNS.  If
+           no columns are specified, all columns will be scanned.  To scan all
+           members of a column family, leave the qualifier empty as in
            'col_family:'.  Examples:
-           
+
            hbase> scan '.META.'
            hbase> scan '.META.', {COLUMNS => 'info:regioninfo'}
            hbase> scan 't1', {COLUMNS => ['c1', 'c2'], LIMIT => 10, \\
              STARTROW => 'xyz'}
-           
+
            For experts, there is an additional option -- CACHE_BLOCKS -- which
            switches block caching for the scanner on (true) or off (false).  By
            default it is enabled.  Examples:
-           
+
            hbase> scan 't1', {COLUMNS => ['c1', 'c2'], CACHE_BLOCKS => false}
 
  status    Show cluster status. Can be 'summary', 'simple', or 'detailed'. The
            default is 'summary'. Examples:
-           
+
            hbase> status
            hbase> status 'simple'
            hbase> status 'summary'
@@ -283,7 +281,7 @@ HBASE SHELL COMMANDS:
  shutdown  Shut down the cluster.
 
  truncate  Disables, drops and recreates the specified table.
-           
+
  version   Output this HBase version
 
 GENERAL NOTES:
@@ -299,7 +297,7 @@ the '=>' character combination.  Usually keys are predefined constants such as
 NAME, VERSIONS, COMPRESSION, etc.  Constants do not need to be quoted.  Type
 'Object.constants' to see a (messy) list of all constants in the environment.
 
-In case you are using binary keys or values and need to enter them into the 
+In case you are using binary keys or values and need to enter them into the
 shell then use double-quotes to make use of hexadecimal for example:
 
   hbase> get 't1', "key\\x03\\x3f\\xcd"
@@ -324,7 +322,7 @@ end
 
 def shutdown
   admin().shutdown()
-end 
+end
 
 # DDL
 
@@ -347,7 +345,7 @@ def drop(table)
 end
 
 def alter(table, args)
-  admin().alter(table, args) 
+  admin().alter(table, args)
 end
 
 # Administration
@@ -359,7 +357,7 @@ end
 def describe(table)
   admin().describe(table)
 end
-  
+
 def enable(table)
   admin().enable(table)
 end
@@ -401,7 +399,7 @@ def zk_dump
 end
 
 # CRUD
-  
+
 def get(table, row, args = {})
   table(table).get(row, args)
 end
@@ -409,7 +407,7 @@ end
 def put(table, row, column, value, timestamp = nil)
   table(table).put(row, column, value, timestamp)
 end
-  
+
 def incr(table, row, column, value = nil)
   table(table).incr(row, column, value)
 end
@@ -417,7 +415,7 @@ end
 def scan(table, args = {})
   table(table).scan(args)
 end
-  
+
 def delete(table, row, column,
     timestamp = org.apache.hadoop.hbase.HConstants::LATEST_TIMESTAMP)
   table(table).delete(row, column, timestamp)
@@ -482,8 +480,8 @@ module IRB
         f.close()
         $stdout = STDOUT
       end
-    end 
-    
+    end
+
     def output_value
       # Suppress output if last_value is 'nil'
       # Otherwise, when user types help, get ugly 'nil'
@@ -501,7 +499,7 @@ module IRB
     @CONF[:IRB_NAME] = 'hbase'
     @CONF[:AP_NAME] = 'hbase'
     @CONF[:BACK_TRACE_LIMIT] = 0 unless $fullBackTrace
-    
+
     if @CONF[:SCRIPT]
       hirb = HIRB.new(nil, @CONF[:SCRIPT])
     else
