@@ -49,5 +49,5 @@ module HBase
 end
 
 # Include classes definition
-require 'shell/hbase/admin'
-require 'shell/hbase/table'
+require 'hbase/admin'
+require 'hbase/table'
