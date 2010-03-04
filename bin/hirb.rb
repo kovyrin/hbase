@@ -82,7 +82,7 @@ org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(log_level);
 org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(log_level);
 
 # Require HBase now after setting log levels
-require 'shell/hbase'
+require 'hbase'
 
 # Setup the HBase module.  Create a configuration.
 # Turn off retries in hbase and ipc.  Human doesn't want to wait on N retries.
