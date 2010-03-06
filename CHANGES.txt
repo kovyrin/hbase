@@ -219,6 +219,13 @@ Release 0.21.0 - Unreleased
    HBASE-2276  Hbase Shell hcd() method is broken by the replication scope 
                parameter (Alexey Kovyrin via Lars George)
    HBASE-2244  META gets inconsistent in a number of crash scenarios
+   HBASE-2284  fsWriteLatency metric may be incorrectly reported 
+               (Kannan Muthukkaruppan via Stack)
+   HBASE-2063  For hfileoutputformat, on timeout/failure/kill clean up
+               half-written hfile (Ruslan Salyakhov via Stack)
+   HBASE-2281  Hbase shell does not work when started from the build dir
+               (Alexey Kovyrin via Stack)
+   HBASE-2293  CME in RegionManager#isMetaServer
 
   IMPROVEMENTS
    HBASE-1760  Cleanup TODOs in HTable
@@ -400,6 +407,9 @@ Release 0.21.0 - Unreleased
                (Benoit Sigoure via JD)
    HBASE-2246  Add a getConfiguration method to HTableInterface
                (Benoit Sigoure via JD)
+   HBASE-2282  More directories should be ignored when using git for development
+               (Alexey Kovyrin via Stack)
+    HBASE-2267 More improvements to the Maven build (Lars Francke via Stack)
 
   NEW FEATURES
    HBASE-1961  HBase EC2 scripts
@@ -423,6 +433,7 @@ Release 0.21.0 - Unreleased
    HBASE-2257  [stargate] multiuser mode
    HBASE-2263  [stargate] multiuser mode: authenticator for zookeeper
    HBASE-2273  [stargate] export metrics via Hadoop metrics, JMX, and zookeeper
+   HBASE-2274  [stargate] filter support: JSON descriptors
 
   OPTIMIZATIONS
    HBASE-410   [testing] Speed up the test suite
