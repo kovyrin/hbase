@@ -172,24 +172,38 @@ Shell.load_command_group(
   'general',
   :full_name => 'GENERAL HBASE SHELL COMMANDS',
   :commands => %w[
+    status
+    version
+  ]
+)
+
+Shell.load_command_group(
+  'ddl',
+  :full_name => 'TABLES MANAGEMENT COMMANDS',
+  :commands => %w[
     alter
-    count
     create
-    delete
-    deleteall
     describe
     disable
     drop
     enable
     exists
+    list
+  ]
+)
+
+Shell.load_command_group(
+  'dml',
+  :full_name => 'DATA MANIPULATION COMMANDS',
+  :commands => %w[
+    count
+    delete
+    deleteall
     get
     incr
-    list
     put
     scan
-    status
     truncate
-    version
   ]
 )
 
