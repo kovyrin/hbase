@@ -5,15 +5,15 @@ module Hbase
   module TableTestHelpers
     def setup_hbase
       @formatter = Shell::Formatter::Console.new(:format_width => 110)
-      @hbase = ::Hbase::Hbase.new(@formatter)
+      @hbase = ::Hbase::Hbase.new
     end
 
     def table(table)
-      @hbase.table(table)
+      @hbase.table(table, @formatter)
     end
 
     def admin
-      @hbase.admin
+      @hbase.admin(@formatter)
     end
 
     def create_test_table(name)

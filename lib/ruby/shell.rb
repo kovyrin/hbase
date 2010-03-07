@@ -45,9 +45,19 @@ module Shell
   #----------------------------------------------------------------------
   class Shell
     attr_accessor :hbase
+    attr_accessor :formatter
 
-    def initialize(hbase)
+    def initialize(hbase, formatter)
       self.hbase = hbase
+      self.formatter = formatter
+    end
+
+    def hbase_admin
+      @hbase_admin ||= hbase.admin(formatter)
+    end
+
+    def hbase_table(name)
+      hbase.table(name, formatter)
     end
 
     def export_commands(where)
@@ -61,7 +71,7 @@ module Shell
     end
 
     def command_instance(command)
-      ::Shell.commands[command.to_s].new(self)
+      ::Shell.commands[command.to_s].new(self, formatter)
     end
 
     def command(command, *args)

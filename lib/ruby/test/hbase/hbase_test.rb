@@ -9,28 +9,28 @@ module Hbase
     end
 
     define_test "Hbase::Hbase constructor should initialize hbase configuration object" do
-      hbase = ::Hbase::Hbase.new(@formatter)
+      hbase = ::Hbase::Hbase.new
       assert_kind_of(org.apache.hadoop.conf.Configuration, hbase.configuration)
     end
 
     define_test "Hbase::Hbase#admin should create a new admin object when called the first time" do
-      hbase = ::Hbase::Hbase.new(@formatter)
-      assert_kind_of(::Hbase::Admin, hbase.admin)
+      hbase = ::Hbase::Hbase.new
+      assert_kind_of(::Hbase::Admin, hbase.admin(@formatter))
     end
 
-    define_test "Hbase::Hbase#admin should use cahced admin object when possible" do
-      hbase = ::Hbase::Hbase.new(@formatter)
-      assert_same(hbase.admin, hbase.admin)
+    define_test "Hbase::Hbase#admin should create a new admin object every call" do
+      hbase = ::Hbase::Hbase.new
+      assert_not_same(hbase.admin(@formatter), hbase.admin(@formatter))
     end
 
     define_test "Hbase::Hbase#table should create a new table object when called the first time" do
-      hbase = ::Hbase::Hbase.new(@formatter)
-      assert_kind_of(::Hbase::Table, hbase.table('.META.'))
+      hbase = ::Hbase::Hbase.new
+      assert_kind_of(::Hbase::Table, hbase.table('.META.', @formatter))
     end
 
     define_test "Hbase::Hbase#table should create a new table object every call" do
-      hbase = ::Hbase::Hbase.new(@formatter)
-      assert_not_same(hbase.table('.META.'), hbase.table('.META.'))
+      hbase = ::Hbase::Hbase.new
+      assert_not_same(hbase.table('.META.', @formatter), hbase.table('.META.', @formatter))
     end
   end
 end

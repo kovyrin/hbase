@@ -90,10 +90,10 @@ require 'shell/formatter'
 @formatter = Shell::Formatter::Console.new(:format_width => format_width)
 
 # Setup the HBase module.  Create a configuration.
-@hbase = Hbase::Hbase.new(@formatter)
+@hbase = Hbase::Hbase.new
 
 # Setup console
-@shell = Shell::Shell.new(@hbase)
+@shell = Shell::Shell.new(@hbase, @formatter)
 
 # Add commands to this namespace
 @shell.export_commands(self)
