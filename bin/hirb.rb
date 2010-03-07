@@ -68,13 +68,13 @@ for arg in ARGV
     break
   end
 end
-for arg in found
-  ARGV.delete(arg)
-end
+
+# Delete all processed args
+found.each { |arg| ARGV.delete(arg) }
 
 # Set logging level to avoid verboseness
-org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(log_level);
-org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(log_level);
+org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(log_level)
+org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(log_level)
 
 # Require HBase now after setting log levels
 require 'hbase'
@@ -84,7 +84,7 @@ require 'shell'
 
 # Presume console format.
 # Formatter takes an :output_stream parameter, if you don't want STDOUT.
-@formatter = Formatter::Console.new(:format_width => format_width)
+@formatter = Shell::Formatter::Console.new(:format_width => format_width)
 
 # Setup the HBase module.  Create a configuration.
 @hbase = Hbase::Hbase.new(@formatter)
