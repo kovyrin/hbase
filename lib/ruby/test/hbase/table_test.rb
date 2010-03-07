@@ -155,5 +155,19 @@ module Hbase
     define_test "deleteall should work with integer keys" do
       @test_table.deleteall(123)
     end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "incr should work w/o value" do
+      @test_table.incr("123", 'x:cnt1')
+    end
+
+    define_test "incr should work with value" do
+      @test_table.incr("123", 'x:cnt2', 10)
+    end
+
+    define_test "incr should work with integer keys" do
+      @test_table.incr(123, 'x:cnt3')
+    end
   end
 end
