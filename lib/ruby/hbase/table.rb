@@ -209,14 +209,14 @@ module Hbase
     # Helper methods
 
     def get_all_columns
-      @table.getTableDescriptor.getFamilies.map do |family|
+      @table.table_descriptor.getFamilies.map do |family|
         "#{family.getNameAsString}:"
       end
     end
 
     # Checks if current table is one of the 'meta' tables
     def is_meta_table?
-      tn = @table.getTableName
+      tn = @table.table_name
       Bytes.equals(tn, HConstants::META_TABLE_NAME) || Bytes.equals(tn, HConstants::ROOT_TABLE_NAME)
     end
 
