@@ -12,12 +12,12 @@ module Hbase
     #----------------------------------------------------------------------------------------------
     # Put a cell 'value' at specified table/row/column
     def put(row, column, value, timestamp = nil)
-      p = Put.new(row.to_java_bytes)
+      p = Put.new(row.to_s.to_java_bytes)
       family, qualifier = parse_column_name(column)
       if timestamp
-        p.add(family, qualifier, timestamp, value.to_java_bytes)
+        p.add(family, qualifier, timestamp, value.to_s.to_java_bytes)
       else
-        p.add(family, qualifier, value.to_java_bytes)
+        p.add(family, qualifier, value.to_s.to_java_bytes)
       end
       @table.put(p)
     end
