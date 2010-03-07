@@ -21,11 +21,11 @@ module Shell
       end
 
       def admin
-        shell.hbase.admin
+        shell.hbase_admin
       end
 
-      def table
-        shell.hbase.table
+      def table(name)
+        shell.hbase_table(name)
       end
     end
   end
