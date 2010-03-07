@@ -131,5 +131,29 @@ module Hbase
     define_test "put should work with integer values" do
       @test_table.put("123", "x:a", 4)
     end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "delete should work without timestamp" do
+      @test_table.delete("123", "x:a")
+    end
+
+    define_test "delete should work with timestamp" do
+      @test_table.delete("123", "x:a", Time.now.to_i)
+    end
+
+    define_test "delete should work with integer keys" do
+      @test_table.delete(123, "x:a")
+    end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "deleteall should work w/o columns and timestamps" do
+      @test_table.deleteall("123")
+    end
+
+    define_test "deleteall should work with integer keys" do
+      @test_table.deleteall(123)
+    end
   end
 end
