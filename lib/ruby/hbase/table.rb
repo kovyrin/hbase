@@ -9,26 +9,104 @@ module Hbase
       @formatter = formatter
     end
 
-    # Delete a cell
-    def delete(row, column, timestamp = HConstants::LATEST_TIMESTAMP)
-      now = Time.now
-      d = Delete.new(row.to_java_bytes, timestamp, nil)
-      split = KeyValue.parseColumn(column.to_java_bytes)
-      d.deleteColumn(split[0], (split.length > 1) ? split[1] : nil, timestamp)
-      @table.delete(d)
-      @formatter.header
-      @formatter.footer(now)
+    #----------------------------------------------------------------------------------------------
+    # Put a cell 'value' at specified table/row/column
+    def put(row, column, value, timestamp = nil)
+      p = Put.new(row.to_java_bytes)
+      family, qualifier = parse_column_name(column)
+      if timestamp
+        p.add(family, qualifier, timestamp, value.to_java_bytes)
+      else
+        p.add(family, qualifier, value.to_java_bytes)
+      end
+      @table.put(p)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Delete a cell
+    def delete(row, column, timestamp = HConstants::LATEST_TIMESTAMP)
+      deleteall(row, column, timestamp)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Delete a row
     def deleteall(row, column = nil, timestamp = HConstants::LATEST_TIMESTAMP)
-      now = Time.now
       d = Delete.new(row.to_java_bytes, timestamp, nil)
       if column
-        split = KeyValue.parseColumn(column.to_java_bytes)
-        d.deleteColumns(split[0], (split.length > 1) ? split[1] : nil, timestamp)
+        family, qualifier = parse_column_name(column)
+        d.deleteColumns(family, qualifier, timestamp)
       end
       @table.delete(d)
-      @formatter.header
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Increment a counter atomically
+    def incr(row, column, value = nil)
+      value ||= 1
+      family, qualifier = parse_column_name(column)
+      @table.incrementColumnValue(row.to_java_bytes, family, qualifier, value)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Get from table
+    def get(row, args = {})
+      now = Time.now
+      if args == nil or args.length == 0 or (args.length == 1 and args[MAXLENGTH] != nil)
+        get = Get.new(row.to_java_bytes)
+      else
+        # Its a hash.
+        columns = args[COLUMN] || args[COLUMNS]
+        unless columns
+          # May have passed TIMESTAMP and row only; wants all columns from ts.
+          unless ts = args[TIMESTAMP]
+            raise ArgumentError, "Failed parse of #{args.inspect}, #{args.class}"
+          end
+          get = Get.new(row.to_java_bytes, ts)
+        else
+          get = Get.new(row.to_java_bytes)
+          # Columns are non-nil
+          if columns.class == String
+            # Single column
+            family, qualifier = parse_column_name(column)
+            if qualifier
+              get.addColumn(family, qualifier)
+            else
+              get.addFamily(family)
+            end
+          elsif columns.class == Array
+            columns.each do |column|
+              family, qualifier = parse_column_name(column)
+              if qualifier
+                get.addColumn(family, qualifier)
+              else
+                get.addFamily(family)
+              end
+            end
+          else
+            raise ArgumentError, "Failed parse column argument type #{args.inspect}, #{args.class}"
+          end
+          get.setMaxVersions(args[VERSIONS] || 1)
+          get.setTimeStamp(args[TIMESTAMP]) if args[TIMESTAMP]
+        end
+      end
+
+      # Call hbase for the results
+      result = @table.get(get)
+
+      # Print out results.  Result can be Cell or RowResult.
+      maxlength = args[MAXLENGTH] || -1
+      @formatter.header(["COLUMN", "CELL"])
+
+      # Print result rows
+      unless result.isEmpty
+        result.list.each do |kv|
+          family = String.from_java_bytes(kv.getFamily)
+          qualifier = Bytes::toStringBinary(kv.getQualifier)
+          column = "#{family}:#{qualifier}"
+          @formatter.row([column, to_string(column, kv, maxlength)])
+        end
+      end
+
       @formatter.footer(now)
     end
 
@@ -88,109 +166,13 @@ module Hbase
       @formatter.footer(now, count)
     end
 
-    def put(row, column, value, timestamp = nil)
-      now = Time.now
-      p = Put.new(row.to_java_bytes)
-      split = KeyValue.parseColumn(column.to_java_bytes)
-      if split.length > 1
-        if timestamp
-          p.add(split[0], split[1], timestamp, value.to_java_bytes)
-        else
-          p.add(split[0], split[1], value.to_java_bytes)
-        end
-      else
-        if timestamp
-          p.add(split[0], nil, timestamp, value.to_java_bytes)
-        else
-          p.add(split[0], nil, value.to_java_bytes)
-        end
-      end
-      @table.put(p)
-      @formatter.header
-      @formatter.footer(now)
-    end
-
-    def incr(row, column, value = nil)
-      now = Time.now
-      split = KeyValue.parseColumn(column.to_java_bytes)
-      family = split[0]
-      qualifier = nil
-      qualifier = split[1] if split.length > 1
-      value ||= 1
-      @table.incrementColumnValue(row.to_java_bytes, family, qualifier, value)
-      @formatter.header
-      @formatter.footer(now)
-    end
-
-    # Get from table
-    def get(row, args = {})
-      now = Time.now
-      if args == nil or args.length == 0 or (args.length == 1 and args[MAXLENGTH] != nil)
-        get = Get.new(row.to_java_bytes)
-      else
-        # Its a hash.
-        columns = args[COLUMN] || args[COLUMNS]
-        unless columns
-          # May have passed TIMESTAMP and row only; wants all columns from ts.
-          unless ts = args[TIMESTAMP]
-            raise ArgumentError, "Failed parse of #{args.inspect}, #{args.class}"
-          end
-          get = Get.new(row.to_java_bytes, ts)
-        else
-          get = Get.new(row.to_java_bytes)
-          # Columns are non-nil
-          if columns.class == String
-            # Single column
-            split = KeyValue.parseColumn(columns.to_java_bytes)
-            if (split.length > 1)
-              get.addColumn(split[0], split[1])
-            else
-              get.addFamily(split[0])
-            end
-          elsif columns.class == Array
-            for column in columns
-              split = KeyValue.parseColumn(column.to_java_bytes)
-              if (split.length > 1)
-                get.addColumn(split[0], split[1])
-              else
-                get.addFamily(split[0])
-              end
-            end
-          else
-            raise ArgumentError, "Failed parse column argument type #{args.inspect}, #{args.class}"
-          end
-          get.setMaxVersions(args[VERSIONS] ? args[VERSIONS] : 1)
-          get.setTimeStamp(args[TIMESTAMP]) if args[TIMESTAMP]
-        end
-      end
-
-      # Call hbase for the results
-      result = @table.get(get)
-
-      # Print out results.  Result can be Cell or RowResult.
-      maxlength = args[MAXLENGTH] || -1
-      @formatter.header(["COLUMN", "CELL"])
-
-      # Print result rows
-      unless result.isEmpty
-        result.list.each do |kv|
-          family = String.from_java_bytes(kv.getFamily)
-          qualifier = Bytes::toStringBinary(kv.getQualifier)
-          column = "#{family}:#{qualifier}"
-          @formatter.row([column, to_string(column, kv, maxlength)])
-        end
-      end
-
-      @formatter.footer(now)
-    end
-
     def count(interval = 1000)
       now = Time.now
       scan = Scan.new()
       scan.setCacheBlocks(false)
       # We can safely set scanner caching with the first key only filter
       scan.setCaching(10)
-      scan.setFilter(FirstKeyOnlyFilter.new())
+      scan.setFilter(FirstKeyOnlyFilter.new)
       s = @table.getScanner(scan)
       count = 0
       i = s.iterator
@@ -218,6 +200,12 @@ module Hbase
     def is_meta_table?
       tn = @table.table_name
       Bytes.equals(tn, HConstants::META_TABLE_NAME) || Bytes.equals(tn, HConstants::ROOT_TABLE_NAME)
+    end
+
+    # Returns family and (when has it) qualifier for a column name
+    def parse_column_name(column)
+      split = KeyValue.parseColumn(column.to_java_bytes)
+      return split[0], (split.length > 1) ? split[1] : nil
     end
 
     # Make a String of the passed kv

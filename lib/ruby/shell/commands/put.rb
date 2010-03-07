@@ -12,7 +12,9 @@ module Shell
       end
 
       def command(table, row, column, value, timestamp = nil)
-        table(table).put(row, column, value, timestamp)
+        format_simple_command do
+          table(table).put(row, column, value, timestamp)
+        end
       end
     end
   end

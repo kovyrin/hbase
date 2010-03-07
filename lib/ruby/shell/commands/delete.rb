@@ -14,7 +14,9 @@ module Shell
       end
 
       def command(table, row, column, timestamp = org.apache.hadoop.hbase.HConstants::LATEST_TIMESTAMP)
-        table(table).delete(row, column, timestamp)
+        format_simple_command do
+          table(table).delete(row, column, timestamp)
+        end
       end
     end
   end
