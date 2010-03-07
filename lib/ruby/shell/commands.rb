@@ -27,6 +27,19 @@ module Shell
       def table(name)
         shell.hbase_table(name)
       end
+
+      #----------------------------------------------------------------------
+
+      def formatter
+        shell.formatter
+      end
+
+      def format_simple_command
+        now = Time.now
+        yield
+        formatter.header
+        formatter.footer(now)
+      end
     end
   end
 end

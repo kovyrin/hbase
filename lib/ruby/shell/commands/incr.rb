@@ -14,7 +14,9 @@ module Shell
       end
 
       def command(table, row, column, value = nil)
-        table(table).incr(row, column, value)
+        format_simple_command do
+          table(table).incr(row, column, value)
+        end
       end
     end
   end
