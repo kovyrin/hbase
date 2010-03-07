@@ -22,9 +22,9 @@ require 'irb/completion'
 # load path so I can load up my HBase ruby modules
 $LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "lib", "ruby")
 
-# Require formatter
-require 'shell/formatter'
-
+#
+# FIXME: Switch args processing to getopt
+#
 # See if there are args for this shell. If any, read and then strip from ARGV
 # so they don't go through to irb.  Output shell 'usage' if user types '--help'
 cmdline_help = <<HERE # HERE document output as shell usage
@@ -81,6 +81,9 @@ require 'hbase'
 
 # Load hbase shell
 require 'shell'
+
+# Require formatter
+require 'shell/formatter'
 
 # Presume console format.
 # Formatter takes an :output_stream parameter, if you don't want STDOUT.
