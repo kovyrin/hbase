@@ -27,10 +27,6 @@ module Shell
       def table
         shell.hbase.table
       end
-
-      def command
-        raise "Please override command method in your command class!"
-      end
     end
   end
 end

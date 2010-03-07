@@ -7,7 +7,7 @@ module Shell
         EOF
       end
 
-      def list
+      def command
         admin.list
       end
     end
