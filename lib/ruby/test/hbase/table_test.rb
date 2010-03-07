@@ -103,4 +103,33 @@ module Hbase
       assert_not_nil(qual)
     end
   end
+
+  # Helper methods tests
+  class TableSimpleMethodsTest < Test::Unit::TestCase
+    include TableTestHelpers
+
+    def setup
+      setup_hbase
+      # Create test table if it does not exist
+      @test_name = "hbase_table_test_table"
+      create_test_table(@test_name)
+      @test_table = table(@test_name)
+    end
+
+    define_test "put should work without timestamp" do
+      @test_table.put("123", "x:a", "1")
+    end
+
+    define_test "put should work with timestamp" do
+      @test_table.put("123", "x:a", "2", Time.now.to_i)
+    end
+
+    define_test "put should work with integer keys" do
+      @test_table.put(123, "x:a", "3")
+    end
+
+    define_test "put should work with integer values" do
+      @test_table.put("123", "x:a", 4)
+    end
+  end
 end
