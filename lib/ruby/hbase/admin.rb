@@ -13,202 +13,206 @@ module Hbase
 
     def list
       now = Time.now
-      @formatter.header()
-      for t in @admin.listTables()
-        @formatter.row([t.getNameAsString()])
-      end
+      @formatter.header
+      @admin.listTables.each { |t| @formatter.row([t.getNameAsString]) }
       @formatter.footer(now)
     end
 
-    def describe(tableName)
+    def describe(table_name)
       now = Time.now
       @formatter.header(["DESCRIPTION", "ENABLED"], [64])
       found = false
+
       tables = @admin.listTables().to_a
-      tables.push(HTableDescriptor::META_TABLEDESC, HTableDescriptor::ROOT_TABLEDESC)
-      for t in tables
-        if t.getNameAsString() == tableName
-          @formatter.row([t.to_s, "%s" % [@admin.isTableEnabled(tableName)]], true, [64])
+      tables << HTableDescriptor::META_TABLEDESC
+      tables << HTableDescriptor::ROOT_TABLEDESC
+
+      tables.each do |t|
+        if t.getNameAsString == table_name
+          @formatter.row([t.to_s, "%s" % [@admin.isTableEnabled(table_name)]], true, [64])
           found = true
+          break
         end
       end
-      if not found
-        raise ArgumentError.new("Failed to find table named " + tableName)
-      end
+      raise(ArgumentError, "Failed to find table named #{table_name}") unless found
+
       @formatter.footer(now)
     end
 
-    def exists(tableName)
+    def exists(table_name)
       now = Time.now
-      @formatter.header()
-      e = @admin.tableExists(tableName)
+      @formatter.header
+      e = @admin.tableExists(table_name)
       @formatter.row([e.to_s])
       @formatter.footer(now)
     end
 
-    def flush(tableNameOrRegionName)
+    def flush(table_or_region_name)
       now = Time.now
-      @formatter.header()
-      @admin.flush(tableNameOrRegionName)
+      @formatter.header
+      @admin.flush(table_or_region_name)
       @formatter.footer(now)
     end
 
-    def compact(tableNameOrRegionName)
+    def compact(table_or_region_name)
       now = Time.now
-      @formatter.header()
-      @admin.compact(tableNameOrRegionName)
+      @formatter.header
+      @admin.compact(table_or_region_name)
       @formatter.footer(now)
     end
 
-    def major_compact(tableNameOrRegionName)
+    def major_compact(table_or_region_name)
       now = Time.now
-      @formatter.header()
-      @admin.majorCompact(tableNameOrRegionName)
+      @formatter.header
+      @admin.majorCompact(table_or_region_name)
       @formatter.footer(now)
     end
 
-    def split(tableNameOrRegionName)
+    def split(table_or_region_name)
       now = Time.now
-      @formatter.header()
-      @admin.split(tableNameOrRegionName)
+      @formatter.header
+      @admin.split(table_or_region_name)
       @formatter.footer(now)
     end
 
-    def enable(tableName)
+    def enable(table_name)
       # TODO: Need an isEnabled method
       now = Time.now
-      @admin.enableTable(tableName)
-      @formatter.header()
+      @admin.enableTable(table_name)
+      @formatter.header
       @formatter.footer(now)
     end
 
-    def disable(tableName)
+    def disable(table_name)
       # TODO: Need an isDisabled method
       now = Time.now
-      @admin.disableTable(tableName)
-      @formatter.header()
+      @admin.disableTable(table_name)
+      @formatter.header
       @formatter.footer(now)
     end
 
-    def enable_region(regionName)
-      online(regionName, false)
+    def enable_region(region_name)
+      online(region_name, false)
     end
 
-    def disable_region(regionName)
-      online(regionName, true)
+    def disable_region(region_name)
+      online(region_name, true)
     end
 
-    def online(regionName, onOrOff)
+    def online(region_name, on_off)
       now = Time.now
+
+      # Open meta table
       meta = HTable.new(HConstants::META_TABLE_NAME)
-      bytes = Bytes.toBytes(regionName)
-      g = Get.new(bytes)
-      g.addColumn(HConstants::CATALOG_FAMILY,
-        HConstants::REGIONINFO_QUALIFIER)
-      hriBytes = meta.get(g).value()
-      hri = Writables.getWritable(hriBytes, HRegionInfo.new());
-      hri.setOffline(onOrOff)
-      put = Put.new(bytes)
-      put.add(HConstants::CATALOG_FAMILY,
-        HConstants::REGIONINFO_QUALIFIER, Writables.getBytes(hri))
-      meta.put(put);
-      @formatter.header()
+
+      # Read region info
+      region_bytes = Bytes.toBytes(region_name)
+      g = Get.new(region_bytes)
+      g.addColumn(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER)
+      hri_bytes = meta.get(g).value
+
+      # Change region status
+      hri = Writables.getWritable(hri_bytes, HRegionInfo.new)
+      hri.setOffline(on_off)
+
+      # Write it back
+      put = Put.new(region_bytes)
+      put.add(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER, Writables.getBytes(hri))
+      meta.put(put)
+
+      @formatter.header
       @formatter.footer(now)
     end
 
-    def drop(tableName)
+    def drop(table_name)
       now = Time.now
-      @formatter.header()
-      if @admin.isTableEnabled(tableName)
-        raise IOError.new("Table " + tableName + " is enabled. Disable it first")
-      else
-        @admin.deleteTable(tableName)
-        flush(HConstants::META_TABLE_NAME);
-        major_compact(HConstants::META_TABLE_NAME);
+
+      if @admin.isTableEnabled(table_name)
+        raise IOError.new("Table " + table_name + " is enabled. Disable it first")
       end
+
+      @formatter.header
+      @admin.deleteTable(table_name)
+      flush(HConstants::META_TABLE_NAME);
+      major_compact(HConstants::META_TABLE_NAME);
+
       @formatter.footer(now)
     end
 
-    def truncate(tableName)
+    def truncate(table_name)
       now = Time.now
-      @formatter.header()
-      hTable = HTable.new(tableName)
-      tableDescription = hTable.getTableDescriptor()
-      puts 'Truncating ' + tableName + '; it may take a while'
+      @formatter.header
+      h_table = HTable.new(table_name)
+      table_description = h_table.getTableDescriptor()
+      puts 'Truncating ' + table_name + '; it may take a while'
       puts 'Disabling table...'
-      disable(tableName)
+      disable(table_name)
       puts 'Dropping table...'
-      drop(tableName)
+      drop(table_name)
       puts 'Creating table...'
-      @admin.createTable(tableDescription)
+      @admin.createTable(table_description)
       @formatter.footer(now)
     end
 
-    # Pass tablename and an array of Hashes
-    def create(tableName, args)
+    # Pass table_name and an array of Hashes
+    def create(table_name, args)
       now = Time.now
       # Pass table name and an array of Hashes.  Later, test the last
       # array to see if its table options rather than column family spec.
-      raise TypeError.new("Table name must be of type String") \
-        unless tableName.instance_of? String
+      raise(TypeError, "Table name must be of type String") unless table_name.instance_of?(String)
+
       # For now presume all the rest of the args are column family
-      # hash specifications. TODO: Add table options handling.
-      htd = HTableDescriptor.new(tableName)
-      for arg in args
+      # hash specifications.
+      # TODO: Add table options handling.
+      htd = HTableDescriptor.new(table_name)
+      args.each do |arg|
         if arg.instance_of? String
           htd.addFamily(HColumnDescriptor.new(arg))
         else
-          raise TypeError.new(arg.class.to_s + " of " + arg.to_s + " is not of Hash type") \
-            unless arg.instance_of? Hash
+          raise(TypeError, "#{arg.class} of #{arg.inspect} is not of Hash type") unless arg.instance_of?(Hash)
           htd.addFamily(hcd(arg))
         end
       end
       @admin.createTable(htd)
-      @formatter.header()
+
+      @formatter.header
       @formatter.footer(now)
     end
 
-    def alter(tableName, args)
+    def alter(table_name, args)
       now = Time.now
-      raise TypeError.new("Table name must be of type String") \
-        unless tableName.instance_of? String
-      htd = @admin.getTableDescriptor(tableName.to_java_bytes)
+
+      raise(TypeError, "Table name must be of type String") unless table_name.instance_of?(String)
+      htd = @admin.getTableDescriptor(table_name.to_java_bytes)
       method = args.delete(METHOD)
+
       if method == "delete"
-        @admin.deleteColumn(tableName, args[NAME])
+        @admin.deleteColumn(table_name, args[NAME])
       elsif method == "table_att"
-        if args[MAX_FILESIZE]
-          htd.setMaxFileSize(JLong.valueOf(args[MAX_FILESIZE]))
-        end
-        if args[READONLY]
-          htd.setReadOnly(JBoolean.valueOf(args[READONLY]))
-        end
-        if args[MEMSTORE_FLUSHSIZE]
-          htd.setMemStoreFlushSize(JLong.valueOf(args[MEMSTORE_FLUSHSIZE]))
-        end
-        if args[DEFERRED_LOG_FLUSH]
-          htd.setDeferredLogFlush(JBoolean.valueOf(args[DEFERRED_LOG_FLUSH]))
-        end
-        @admin.modifyTable(tableName.to_java_bytes, htd)
+        htd.setMaxFileSize(JLong.valueOf(args[MAX_FILESIZE])) if args[MAX_FILESIZE]
+        htd.setReadOnly(JBoolean.valueOf(args[READONLY])) if args[READONLY]
+        htd.setMemStoreFlushSize(JLong.valueOf(args[MEMSTORE_FLUSHSIZE])) if args[MEMSTORE_FLUSHSIZE]
+        htd.setDeferredLogFlush(JBoolean.valueOf(args[DEFERRED_LOG_FLUSH])) if args[DEFERRED_LOG_FLUSH]
+        @admin.modifyTable(table_name.to_java_bytes, htd)
       else
         descriptor = hcd(args)
-        if (htd.hasFamily(descriptor.getNameAsString().to_java_bytes))
-          @admin.modifyColumn(tableName, descriptor.getNameAsString(),
-                              descriptor);
+        if htd.hasFamily(descriptor.getNameAsString.to_java_bytes)
+          @admin.modifyColumn(table_name, descriptor.getNameAsString, descriptor);
         else
-          @admin.addColumn(tableName, descriptor);
+          @admin.addColumn(table_name, descriptor);
         end
       end
-      @formatter.header()
+
+      @formatter.header
       @formatter.footer(now)
     end
 
-    def close_region(regionName, server)
+    def close_region(region_name, server)
       now = Time.now
       s = nil
       s = [server].to_java if server
-      @admin.closeRegion(regionName, s)
-      @formatter.header()
+      @admin.closeRegion(region_name, s)
+      @formatter.header
       @formatter.footer(now)
     end
 
@@ -218,7 +222,7 @@ module Hbase
 
     def status(format)
       status = @admin.getClusterStatus()
-      if format != nil and format == "detailed"
+      if format == "detailed"
         puts("version %s" % [ status.getHBaseVersion() ])
         # Put regions in transition first because usually empty
         puts("%d regionsInTransition" % status.getRegionsInTransition().size())
@@ -240,7 +244,7 @@ module Hbase
         for server in status.getDeadServerNames()
           puts("    %s" % [ server ])
         end
-      elsif format != nil and format == "simple"
+      elsif format == "simple"
         load = 0
         regions = 0
         puts("%d live servers" % [ status.getServers() ])
