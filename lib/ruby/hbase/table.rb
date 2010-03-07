@@ -2,8 +2,10 @@
 
 module Hbase
   class Table
-    def initialize(configuration, table_tame, formatter)
-      @table = HTable.new(configuration, table_tame)
+    include HBaseConstants
+
+    def initialize(configuration, table_name, formatter)
+      @table = HTable.new(configuration, table_name)
       @formatter = formatter
     end
 
@@ -214,7 +216,7 @@ module Hbase
 
     # Checks if current table is one of the 'meta' tables
     def is_meta_table?
-      tn = @table.gettable_tame
+      tn = @table.getTableName
       Bytes.equals(tn, HConstants::META_TABLE_NAME) || Bytes.equals(tn, HConstants::ROOT_TABLE_NAME)
     end
 

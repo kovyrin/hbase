@@ -31,7 +31,7 @@ import org.apache.hadoop.hbase.HRegionInfo
 import org.apache.zookeeper.ZooKeeper
 import org.apache.zookeeper.ZooKeeperMain
 
-module HBase
+module HBaseConstants
   COLUMN = "COLUMN"
   COLUMNS = "COLUMNS"
   TIMESTAMP = "TIMESTAMP"
