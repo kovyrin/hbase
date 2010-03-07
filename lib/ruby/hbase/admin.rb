@@ -2,6 +2,8 @@
 
 module Hbase
   class Admin
+    include HBaseConstants
+
     def initialize(configuration, formatter)
       @admin = HBaseAdmin.new(configuration)
       connection = @admin.getConnection()
@@ -42,8 +44,7 @@ module Hbase
     def exists(table_name)
       now = Time.now
       @formatter.header
-      e = @admin.tableExists(table_name)
-      @formatter.row([e.to_s])
+      @formatter.row([exists?(table_name).to_s])
       @formatter.footer(now)
     end
 
@@ -262,11 +263,10 @@ module Hbase
         end
         puts("Aggregate load: %d, regions: %d" % [ load , regions ] )
       else
-        puts("%d servers, %d dead, %.4f average load" % \
-          [ status.getServers(), status.getDeadServers(), \
-            status.getAverageLoad()])
+        puts "#{status.getServers} servers, #{status.getDeadServers} dead, #{'%.4f' % status.getAverageLoad} average load"
       end
     end
+
     def hcd(arg)
       # Return a new HColumnDescriptor made of passed args
       # TODO: This is brittle code.
@@ -299,6 +299,14 @@ module Hbase
 
     def zk_dump
       puts @zk_wrapper.dump
+    end
+
+    #
+    # Helper methods
+    #
+
+    def exists?(table_name)
+      @admin.tableExists(table_name)
     end
   end
 end

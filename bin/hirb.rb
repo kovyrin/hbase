@@ -123,7 +123,7 @@ end
 
 promote_constants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
 promote_constants(org.apache.hadoop.hbase.HTableDescriptor.constants)
-promote_constants(HBase.constants)
+promote_constants(HBaseConstants.constants)
 
 # If script2run, try running it.  Will go on to run the shell unless
 # script calls 'exit' or 'exit 0' or 'exit errcode'.
