@@ -58,13 +58,9 @@ module Hbase
     def setup
       setup_hbase
       # Create test table if it does not exist
-      @test_name = "hbase_test_table_#{Time.now.to_i}"
+      @test_name = "hbase_table_test_table"
       create_test_table(@test_name)
       @test_table = table(@test_name)
-    end
-
-    def teardown
-      destroy_test_table(@test_name)
     end
 
     define_test "is_meta_table? method should return true for the meta table" do
@@ -77,6 +73,14 @@ module Hbase
 
     define_test "is_meta_table? method should return false for a normal table" do
       assert(!@test_table.is_meta_table?)
+    end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "get_all_columns should return columns list" do
+      cols = table('.META.').get_all_columns
+      assert_kind_of(Array, cols)
+      assert(cols.length > 0)
     end
   end
 end
