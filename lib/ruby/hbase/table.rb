@@ -44,7 +44,7 @@ module Hbase
     def incr(row, column, value = nil)
       value ||= 1
       family, qualifier = parse_column_name(column)
-      @table.incrementColumnValue(row.to_java_bytes, family, qualifier, value)
+      @table.incrementColumnValue(row.to_s.to_java_bytes, family, qualifier, value)
     end
 
     #----------------------------------------------------------------------------------------------
