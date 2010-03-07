@@ -71,7 +71,7 @@ module Shell
     end
 
     def command_instance(command)
-      ::Shell.commands[command.to_s].new(self, formatter)
+      ::Shell.commands[command.to_s].new(self)
     end
 
     def command(command, *args)
