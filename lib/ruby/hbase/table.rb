@@ -222,8 +222,8 @@ module Hbase
 
     # Make a String of the passed kv
     # Intercept cells whose format we know such as the info:regioninfo in .META.
-    def to_string(column, kv, maxlength)
-      if isMetaTable()
+    def to_string(column, kv, maxlength = -1)
+      if is_meta_table?
         if column == 'info:regioninfo'
           hri = Writables.getHRegionInfoOrNull(kv.getValue)
           return "timestamp=%d, value=%s" % [kv.getTimestamp, hri.toString]
