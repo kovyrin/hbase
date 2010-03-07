@@ -159,7 +159,7 @@ module Hbase
           qualifier = Bytes::toStringBinary(kv.getQualifier)
           column = "#{family}:#{qualifier}"
           cell = to_string(column, kv, maxlength)
-          @formatter.row([row, "column=%s, %s" % [column, cell]])
+          @formatter.row([row, "column=#{column}, #{cell}"])
         end
         count += 1
       end
