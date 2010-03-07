@@ -5,9 +5,9 @@ module Hbase
     def initialize(configuration, formatter)
       @admin = HBaseAdmin.new(configuration)
       connection = @admin.getConnection()
-      @zkWrapper = connection.getZooKeeperWrapper()
-      zk = @zkWrapper.getZooKeeper()
-      @zkMain = ZooKeeperMain.new(zk)
+      @zk_wrapper = connection.getZooKeeperWrapper()
+      zk = @zk_wrapper.getZooKeeper()
+      @zk_main = ZooKeeperMain.new(zk)
       @formatter = formatter
     end
 
@@ -290,11 +290,11 @@ module Hbase
     def zk(args)
       line = args.join(' ')
       line = 'help' if line.empty?
-      @zkMain.executeLine(line)
+      @zk_main.executeLine(line)
     end
 
     def zk_dump
-      puts @zkWrapper.dump
+      puts @zk_wrapper.dump
     end
   end
 end
