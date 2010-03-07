@@ -31,7 +31,7 @@ module Hbase
     #----------------------------------------------------------------------------------------------
     # Delete a row
     def deleteall(row, column = nil, timestamp = HConstants::LATEST_TIMESTAMP)
-      d = Delete.new(row.to_java_bytes, timestamp, nil)
+      d = Delete.new(row.to_s.to_java_bytes, timestamp, nil)
       if column
         family, qualifier = parse_column_name(column)
         d.deleteColumns(family, qualifier, timestamp)
