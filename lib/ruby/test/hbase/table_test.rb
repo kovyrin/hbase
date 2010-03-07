@@ -82,5 +82,25 @@ module Hbase
       assert_kind_of(Array, cols)
       assert(cols.length > 0)
     end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "parse_column_name should not return a qualifier for name-only column specifiers" do
+      col, qual = table('.META.').parse_column_name('foo:')
+      assert_not_nil(col)
+      assert_nil(qual)
+    end
+
+    define_test "parse_column_name should not return a qualifier for family-only column specifiers" do
+      col, qual = table('.META.').parse_column_name('foo')
+      assert_not_nil(col)
+      assert_nil(qual)
+    end
+
+    define_test "parse_column_name should return a qualifier for family:qualifier column specifiers" do
+      col, qual = table('.META.').parse_column_name('foo:bar')
+      assert_not_nil(col)
+      assert_not_nil(qual)
+    end
   end
 end
