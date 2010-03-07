@@ -122,13 +122,6 @@ module Shell
 
     class JSON < Base
     end
-
-    # Do a bit of testing.
-    if $0 == __FILE__
-      formatter = Console.new(STDOUT)
-      now = Time.now
-      
-    end
   end
 end
 
