@@ -8,7 +8,7 @@ module Shell
       end
 
       def command
-        admin.zk_dump
+        puts admin.zk_dump
       end
     end
   end

@@ -68,6 +68,57 @@ module Hbase
       major_compact(HConstants::META_TABLE_NAME)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Shuts hbase down
+    def shutdown
+      @admin.shutdown
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Returns ZooKeeper status dump
+    def zk_dump
+      @zk_wrapper.dump
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Creates a table
+    def create(table_name, *args)
+      # Fail if table name is not a string
+      raise(ArgumentError, "Table name must be of type String") unless table_name.kind_of?(String)
+
+      # Flatten params array
+      args = args.flatten.compact
+
+      # Fail if no column families defined
+      raise(ArgumentError, "Table must have at least one column family") if args.empty?
+
+      # Start defining the table
+      htd = HTableDescriptor.new(table_name)
+
+      # All args are columns, add them to the table definition
+      # TODO: add table options support
+      args.each do |arg|
+        unless arg.kind_of?(String) || arg.kind_of?(Hash)
+          raise(ArgumentError, "#{arg.class} of #{arg.inspect} is not of Hash or String type")
+        end
+
+        # Add column to the table
+        htd.addFamily(hcd(arg))
+      end
+
+      # Perform the create table call
+      @admin.createTable(htd)
+    end
+
+    def close_region(region_name, server)
+      now = Time.now
+      s = nil
+      s = [server].to_java if server
+      @admin.closeRegion(region_name, s)
+      @formatter.header
+      @formatter.footer(now)
+    end
+
     def describe(table_name)
       now = Time.now
       @formatter.header(["DESCRIPTION", "ENABLED"], [64])
@@ -79,7 +130,7 @@ module Hbase
 
       tables.each do |t|
         if t.getNameAsString == table_name
-          @formatter.row([t.to_s, "%s" % [@admin.isTableEnabled(table_name)]], true, [64])
+          @formatter.row([ t.to_s, enabled?(table_name).to_s ], true, [ 64 ])
           found = true
           break
         end
@@ -137,31 +188,6 @@ module Hbase
       @formatter.footer(now)
     end
 
-    # Pass table_name and an array of Hashes
-    def create(table_name, args)
-      now = Time.now
-      # Pass table name and an array of Hashes.  Later, test the last
-      # array to see if its table options rather than column family spec.
-      raise(TypeError, "Table name must be of type String") unless table_name.instance_of?(String)
-
-      # For now presume all the rest of the args are column family
-      # hash specifications.
-      # TODO: Add table options handling.
-      htd = HTableDescriptor.new(table_name)
-      args.each do |arg|
-        if arg.instance_of? String
-          htd.addFamily(HColumnDescriptor.new(arg))
-        else
-          raise(TypeError, "#{arg.class} of #{arg.inspect} is not of Hash type") unless arg.instance_of?(Hash)
-          htd.addFamily(hcd(arg))
-        end
-      end
-      @admin.createTable(htd)
-
-      @formatter.header
-      @formatter.footer(now)
-    end
-
     def alter(table_name, args)
       now = Time.now
 
@@ -188,19 +214,6 @@ module Hbase
 
       @formatter.header
       @formatter.footer(now)
-    end
-
-    def close_region(region_name, server)
-      now = Time.now
-      s = nil
-      s = [server].to_java if server
-      @admin.closeRegion(region_name, s)
-      @formatter.header
-      @formatter.footer(now)
-    end
-
-    def shutdown()
-      @admin.shutdown()
     end
 
     def status(format)
@@ -249,17 +262,42 @@ module Hbase
       end
     end
 
+    def zk(args)
+      line = args.join(' ')
+      line = 'help' if line.empty?
+      @zk_main.executeLine(line)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    #
+    # Helper methods
+    #
+
+    # Does table exist?
+    def exists?(table_name)
+      @admin.tableExists(table_name)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Is table enabled
+    def enabled?(table_name)
+      @admin.isTableEnabled(table_name)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # Return a new HColumnDescriptor made of passed args
     def hcd(arg)
-      # Return a new HColumnDescriptor made of passed args
+      # String arg, single parameter constructor
+      return HColumnDescriptor.new(arg) if arg.kind_of?(String)
+
       # TODO: This is brittle code.
       # Here is current HCD constructor:
       # public HColumnDescriptor(final byte [] familyName, final int maxVersions,
       # final String compression, final boolean inMemory,
       # final boolean blockCacheEnabled, final int blocksize,
       # final int timeToLive, final boolean bloomFilter, final int scope) {
-      name = arg[NAME]
-      raise ArgumentError.new("Column family " + arg + " must have a name") \
-        unless name
+      raise(ArgumentError, "Column family #{arg} must have a name") unless name = arg[NAME]
+
       # TODO: What encoding are Strings in jruby?
       return HColumnDescriptor.new(name.to_java_bytes,
         # JRuby uses longs for ints. Need to convert.  Also constants are String
@@ -273,26 +311,5 @@ module Hbase
         arg[HColumnDescriptor::REPLICATION_SCOPE]? JInteger.new(arg[REPLICATION_SCOPE]): HColumnDescriptor::DEFAULT_REPLICATION_SCOPE)
     end
 
-    def zk(args)
-      line = args.join(' ')
-      line = 'help' if line.empty?
-      @zk_main.executeLine(line)
-    end
-
-    def zk_dump
-      puts @zk_wrapper.dump
-    end
-
-    #
-    # Helper methods
-    #
-
-    def exists?(table_name)
-      @admin.tableExists(table_name)
-    end
-
-    def enabled?(table_name)
-      @admin.isTableEnabled(table_name)
-    end
   end
 end

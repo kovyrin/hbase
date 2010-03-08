@@ -18,7 +18,9 @@ module Shell
       end
 
       def command(table, *args)
-        admin.create(table, args)
+        format_simple_command do
+          admin.create(table, *args)
+        end
       end
     end
   end
