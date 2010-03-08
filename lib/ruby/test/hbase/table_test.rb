@@ -104,7 +104,7 @@ module Hbase
     end
   end
 
-  # Helper methods tests
+  # Simple data management methods tests
   class TableSimpleMethodsTest < Test::Unit::TestCase
     include TableTestHelpers
 
@@ -168,6 +168,34 @@ module Hbase
 
     define_test "incr should work with integer keys" do
       @test_table.incr(123, 'x:cnt3')
+    end
+  end
+
+  # Complex data management methods tests
+  class TableComplexMethodsTest < Test::Unit::TestCase
+    include TableTestHelpers
+
+    def setup
+      setup_hbase
+      # Create test table if it does not exist
+      @test_name = "hbase_table_test_table"
+      create_test_table(@test_name)
+      @test_table = table(@test_name)
+    end
+
+    define_test "count should work w/o a block passed" do
+      @test_table.put("1", "x:a", "1")
+      assert(@test_table.count > 0)
+    end
+
+    define_test "count should work with a block passed (and yield)" do
+      @test_table.put("1", "x:a", "1")
+      rows = []
+      cnt = @test_table.count(1) do |cnt, row|
+        rows << row
+      end
+      assert(cnt > 0)
+      assert(!rows.empty?)
     end
   end
 end
