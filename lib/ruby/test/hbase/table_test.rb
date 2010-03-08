@@ -1,6 +1,8 @@
 require 'test/unit'
 require 'hbase'
 
+include HBaseConstants
+
 module Hbase
   module TableTestHelpers
     def setup_hbase
@@ -181,21 +183,124 @@ module Hbase
       @test_name = "hbase_table_test_table"
       create_test_table(@test_name)
       @test_table = table(@test_name)
+
+      # Test data
+      @test_ts = 12345678
+      @test_table.put(1, "x:a", 1)
+      @test_table.put(1, "x:b", 2, @test_ts)
     end
 
     define_test "count should work w/o a block passed" do
-      @test_table.put("1", "x:a", "1")
       assert(@test_table.count > 0)
     end
 
     define_test "count should work with a block passed (and yield)" do
-      @test_table.put("1", "x:a", "1")
       rows = []
       cnt = @test_table.count(1) do |cnt, row|
         rows << row
       end
       assert(cnt > 0)
       assert(!rows.empty?)
+    end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "get should work w/o columns specification" do
+      res = @test_table.get('1')
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should work with integer keys" do
+      res = @test_table.get(1)
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should work with hash columns spec and a single string COLUMN parameter" do
+      res = @test_table.get('1', COLUMN => 'x:a')
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_nil(res['x:b'])
+    end
+
+    define_test "get should work with hash columns spec and a single string COLUMNS parameter" do
+      res = @test_table.get('1', COLUMNS => 'x:a')
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_nil(res['x:b'])
+    end
+
+    define_test "get should work with hash columns spec and an array of strings COLUMN parameter" do
+      res = @test_table.get('1', COLUMN => [ 'x:a', 'x:b' ])
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should work with hash columns spec and an array of strings COLUMNS parameter" do
+      res = @test_table.get('1', COLUMNS => [ 'x:a', 'x:b' ])
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should work with hash columns spec and TIMESTAMP only" do
+      res = @test_table.get('1', TIMESTAMP => @test_ts)
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should fail with hash columns spec and strange COLUMN value" do
+      assert_raise(ArgumentError) do
+        @test_table.get('1', COLUMN => {})
+      end
+    end
+
+    define_test "get should fail with hash columns spec and strange COLUMNS value" do
+      assert_raise(ArgumentError) do
+        @test_table.get('1', COLUMN => {})
+      end
+    end
+
+    define_test "get should fail with hash columns spec and no TIMESTAMP or COLUMN[S]" do
+      assert_raise(ArgumentError) do
+        @test_table.get('1', { :foo => :bar })
+      end
+    end
+
+    define_test "get should work with a string column spec" do
+      res = @test_table.get('1', 'x:b')
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should work with an array columns spec" do
+      res = @test_table.get('1', 'x:a', 'x:b')
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
+    end
+
+    define_test "get should work with an array or arrays columns spec (yeah, crazy)" do
+      res = @test_table.get('1', ['x:a'], ['x:b'])
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['x:a'])
+      assert_not_nil(res['x:b'])
     end
   end
 end
