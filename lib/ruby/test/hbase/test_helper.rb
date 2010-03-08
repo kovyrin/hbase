@@ -15,6 +15,7 @@ module Hbase
 
     def create_test_table(name)
       admin.create name, [{'NAME' => 'x', 'VERSIONS' => 5}] unless admin.exists?(name)
+      admin.enable(name) unless admin.enabled?(name)
     end
   end
 end

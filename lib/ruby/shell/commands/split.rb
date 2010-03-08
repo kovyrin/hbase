@@ -8,7 +8,9 @@ module Shell
       end
 
       def command(table_or_region_name)
-        admin.split(table_or_region_name)
+        format_simple_command do
+          admin.split(table_or_region_name)
+        end
       end
     end
   end

@@ -31,34 +31,30 @@ module Hbase
       @admin.compact(table_or_region_name)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Requests a table or region major compaction
     def major_compact(table_or_region_name)
-      now = Time.now
-      @formatter.header
       @admin.majorCompact(table_or_region_name)
-      @formatter.footer(now)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Requests a table or region split
     def split(table_or_region_name)
-      now = Time.now
-      @formatter.header
       @admin.split(table_or_region_name)
-      @formatter.footer(now)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Enables a table
     def enable(table_name)
-      # TODO: Need an isEnabled method
-      now = Time.now
+      return if enabled?(table_name)
       @admin.enableTable(table_name)
-      @formatter.header
-      @formatter.footer(now)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Disables a table
     def disable(table_name)
-      # TODO: Need an isDisabled method
-      now = Time.now
+      return unless enabled?(table_name)
       @admin.disableTable(table_name)
-      @formatter.header
-      @formatter.footer(now)
     end
 
     def describe(table_name)
@@ -297,6 +293,10 @@ module Hbase
 
     def exists?(table_name)
       @admin.tableExists(table_name)
+    end
+
+    def enabled?(table_name)
+      @admin.isTableEnabled(table_name)
     end
   end
 end
