@@ -78,6 +78,24 @@ module Hbase
       admin.split('.META.')
     end
 
+    #-------------------------------------------------------------------------------
 
+    define_test "drop should fail on non-existent tables" do
+      assert_raise(ArgumentError) do
+        admin.drop('.NOT.EXISTS.')
+      end
+    end
+
+    define_test "drop should fail on enabled tables" do
+      assert_raise(ArgumentError) do
+        admin.drop(@test_name)
+      end
+    end
+
+    define_test "drop should drop tables" do
+      admin.disable(@test_name)
+      admin.drop(@test_name)
+      assert(!admin.exists?(@test_name))
+    end
   end
 end
