@@ -60,7 +60,7 @@ module Hbase
     def setup
       setup_hbase
       # Create test table if it does not exist
-      @test_name = "hbase_table_test_table"
+      @test_name = "hbase_shell_tests_table"
       create_test_table(@test_name)
       @test_table = table(@test_name)
     end
@@ -113,7 +113,7 @@ module Hbase
     def setup
       setup_hbase
       # Create test table if it does not exist
-      @test_name = "hbase_table_test_table"
+      @test_name = "hbase_shell_tests_table"
       create_test_table(@test_name)
       @test_table = table(@test_name)
     end
@@ -180,7 +180,7 @@ module Hbase
     def setup
       setup_hbase
       # Create test table if it does not exist
-      @test_name = "hbase_table_test_table"
+      @test_name = "hbase_shell_tests_table"
       create_test_table(@test_name)
       @test_table = table(@test_name)
 
