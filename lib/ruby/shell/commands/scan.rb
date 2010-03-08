@@ -23,7 +23,14 @@ module Shell
       end
 
       def command(table, args = {})
-        table(table).scan(args)
+        now = Time.now
+        formatter.header(["ROW", "COLUMN+CELL"])
+
+        count = table(table).scan(args) do |row, cells|
+          formatter.row([ row, cells ])
+        end
+
+        formatter.footer(now, count)
       end
     end
   end
