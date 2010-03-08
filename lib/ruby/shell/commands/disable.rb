@@ -8,7 +8,9 @@ module Shell
       end
 
       def command(table)
-        admin.disable(table)
+        format_simple_command do
+          admin.disable(table)
+        end
       end
     end
   end
