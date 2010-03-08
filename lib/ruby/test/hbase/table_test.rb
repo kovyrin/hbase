@@ -1,41 +1,13 @@
 require 'test/unit'
 require 'hbase'
+require 'test/hbase/test_helper'
 
 include HBaseConstants
 
 module Hbase
-  module TableTestHelpers
-    def setup_hbase
-      @formatter = Shell::Formatter::Console.new(:format_width => 110)
-      @hbase = ::Hbase::Hbase.new
-    end
-
-    def table(table)
-      @hbase.table(table, @formatter)
-    end
-
-    def admin
-      @hbase.admin(@formatter)
-    end
-
-    def create_test_table(name)
-      admin.create name, [{'NAME' => 'x', 'VERSIONS' => 5}] unless admin.exists?(name)
-    end
-
-    def destroy_test_table(name)
-      return if admin.exists?(name)
-      begin
-        admin.disable(name)
-        admin.drop(name)
-      rescue org.apache.hadoop.hbase.TableNotFoundException
-        # Just suppress not found exception
-      end
-    end
-  end
-
   # Constructor tests
   class TableConstructorTest < Test::Unit::TestCase
-    include TableTestHelpers
+    include TestHelpers
     def setup
       setup_hbase
     end
@@ -55,7 +27,7 @@ module Hbase
 
   # Helper methods tests
   class TableHelpersTest < Test::Unit::TestCase
-    include TableTestHelpers
+    include TestHelpers
 
     def setup
       setup_hbase
@@ -108,7 +80,7 @@ module Hbase
 
   # Simple data management methods tests
   class TableSimpleMethodsTest < Test::Unit::TestCase
-    include TableTestHelpers
+    include TestHelpers
 
     def setup
       setup_hbase
@@ -175,7 +147,7 @@ module Hbase
 
   # Complex data management methods tests
   class TableComplexMethodsTest < Test::Unit::TestCase
-    include TableTestHelpers
+    include TestHelpers
 
     def setup
       setup_hbase
