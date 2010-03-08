@@ -57,6 +57,17 @@ module Hbase
       @admin.disableTable(table_name)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Drops a table
+    def drop(table_name)
+      raise ArgumentError, "Table #{table_name} does not exist.'" unless exists?(table_name)
+      raise ArgumentError, "Table #{table_name} is enabled. Disable it first.'" if enabled?(table_name)
+
+      @admin.deleteTable(table_name)
+      flush(HConstants::META_TABLE_NAME)
+      major_compact(HConstants::META_TABLE_NAME)
+    end
+
     def describe(table_name)
       now = Time.now
       @formatter.header(["DESCRIPTION", "ENABLED"], [64])
@@ -108,21 +119,6 @@ module Hbase
       meta.put(put)
 
       @formatter.header
-      @formatter.footer(now)
-    end
-
-    def drop(table_name)
-      now = Time.now
-
-      if @admin.isTableEnabled(table_name)
-        raise IOError.new("Table " + table_name + " is enabled. Disable it first")
-      end
-
-      @formatter.header
-      @admin.deleteTable(table_name)
-      flush(HConstants::META_TABLE_NAME);
-      major_compact(HConstants::META_TABLE_NAME);
-
       @formatter.footer(now)
     end
 
