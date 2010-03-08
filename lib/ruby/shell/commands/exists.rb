@@ -8,7 +8,11 @@ module Shell
       end
 
       def command(table)
-        admin.exists(table)
+        format_simple_command do
+          formatter.row([
+            "Table #{table} " + (admin.exists?(table.to_s) ? "does exist" : "does not exist")
+          ])
+        end
       end
     end
   end

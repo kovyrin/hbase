@@ -13,53 +13,22 @@ module Hbase
       @formatter = formatter
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Returns a list of tables in hbase
     def list
-      now = Time.now
-      @formatter.header
-      @admin.listTables.each { |t| @formatter.row([t.getNameAsString]) }
-      @formatter.footer(now)
+      @admin.listTables.map { |t| t.getNameAsString }
     end
 
-    def describe(table_name)
-      now = Time.now
-      @formatter.header(["DESCRIPTION", "ENABLED"], [64])
-      found = false
-
-      tables = @admin.listTables().to_a
-      tables << HTableDescriptor::META_TABLEDESC
-      tables << HTableDescriptor::ROOT_TABLEDESC
-
-      tables.each do |t|
-        if t.getNameAsString == table_name
-          @formatter.row([t.to_s, "%s" % [@admin.isTableEnabled(table_name)]], true, [64])
-          found = true
-          break
-        end
-      end
-      raise(ArgumentError, "Failed to find table named #{table_name}") unless found
-
-      @formatter.footer(now)
-    end
-
-    def exists(table_name)
-      now = Time.now
-      @formatter.header
-      @formatter.row([exists?(table_name).to_s])
-      @formatter.footer(now)
-    end
-
+    #----------------------------------------------------------------------------------------------
+    # Requests a table or region flush
     def flush(table_or_region_name)
-      now = Time.now
-      @formatter.header
       @admin.flush(table_or_region_name)
-      @formatter.footer(now)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Requests a table or region compaction
     def compact(table_or_region_name)
-      now = Time.now
-      @formatter.header
       @admin.compact(table_or_region_name)
-      @formatter.footer(now)
     end
 
     def major_compact(table_or_region_name)
@@ -89,6 +58,27 @@ module Hbase
       now = Time.now
       @admin.disableTable(table_name)
       @formatter.header
+      @formatter.footer(now)
+    end
+
+    def describe(table_name)
+      now = Time.now
+      @formatter.header(["DESCRIPTION", "ENABLED"], [64])
+      found = false
+
+      tables = @admin.listTables().to_a
+      tables << HTableDescriptor::META_TABLEDESC
+      tables << HTableDescriptor::ROOT_TABLEDESC
+
+      tables.each do |t|
+        if t.getNameAsString == table_name
+          @formatter.row([t.to_s, "%s" % [@admin.isTableEnabled(table_name)]], true, [64])
+          found = true
+          break
+        end
+      end
+      raise(ArgumentError, "Failed to find table named #{table_name}") unless found
+
       @formatter.footer(now)
     end
 
