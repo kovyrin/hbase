@@ -6,7 +6,6 @@ module Hbase
 
     def initialize(configuration, table_name, formatter)
       @table = HTable.new(configuration, table_name)
-      @formatter = formatter
     end
 
     #----------------------------------------------------------------------------------------------
@@ -59,10 +58,11 @@ module Hbase
       # Run the scanner
       scanner = @table.getScanner(scan)
       count = 0
+      iter = scanner.iterator
 
       # Iterate results
-      while (scanner.iterator.hasNext)
-        row = scanner.iterator.next
+      while iter.hasNext
+        row = iter.next
         count += 1
         next unless (block_given? && count % interval == 0)
         # Allow command modules to visualize counting process
@@ -156,30 +156,32 @@ module Hbase
     end
 
     def scan(args = {})
-      now = Time.now
-      limit = -1
-      maxlength = -1
-      if args && args.length > 0
-        limit = args["LIMIT"] || -1
-        maxlength = args["MAXLENGTH"] || -1
+      unless args.kind_of?(Hash)
+        raise ArgumentError, "Arguments should be a hash. Failed to parse #{args.inspect}, #{args.class}"
+      end
+
+      limit = args.delete("LIMIT") || -1
+      maxlength = args.delete("MAXLENGTH") || -1
+
+      if args.any?
         filter = args["FILTER"]
-        startrow = args["STARTROW"] || ""
+        startrow = args["STARTROW"] || ''
         stoprow = args["STOPROW"]
         timestamp = args["TIMESTAMP"]
-        columns = args["COLUMNS"] || get_all_columns
+        columns = args["COLUMNS"] || args["COLUMN"] || get_all_columns
         cache = args["CACHE_BLOCKS"] || true
         versions = args["VERSIONS"] || 1
 
-        if columns.class == String
-          columns = [columns]
-        elsif columns.class != Array
+        # Normalize column names
+        columns = [columns] if columns.class == String
+        unless columns.kind_of?(Array)
           raise ArgumentError.new("COLUMNS must be specified as a String or an Array")
         end
 
-        if stoprow
-          scan = Scan.new(startrow.to_java_bytes, stoprow.to_java_bytes)
+        scan = if stoprow
+          Scan.new(startrow.to_java_bytes, stoprow.to_java_bytes)
         else
-          scan = Scan.new(startrow.to_java_bytes)
+          Scan.new(startrow.to_java_bytes)
         end
 
         columns.each { |c| scan.addColumns(c) }
@@ -190,25 +192,42 @@ module Hbase
       else
         scan = Scan.new
       end
-      s = @table.getScanner(scan)
-      count = 0
-      @formatter.header(["ROW", "COLUMN+CELL"])
-      i = s.iterator
-      while i.hasNext
-        r = i.next
-        row = Bytes::toStringBinary(r.getRow)
-        break if limit != -1 && count >= limit
 
-        r.list.each do |kv|
+      # Start the scanner
+      scanner = @table.getScanner(scan)
+      count = 0
+      res = {}
+      iter = scanner.iterator
+
+      # Iterate results
+      while iter.hasNext
+        if limit > 0 && count >= limit
+          break
+        end
+
+        row = iter.next
+        key = Bytes::toStringBinary(row.getRow)
+
+        row.list.each do |kv|
           family = String.from_java_bytes(kv.getFamily)
           qualifier = Bytes::toStringBinary(kv.getQualifier)
+
           column = "#{family}:#{qualifier}"
           cell = to_string(column, kv, maxlength)
-          @formatter.row([row, "column=#{column}, #{cell}"])
+
+          if block_given?
+            yield(key, "column=#{column}, #{cell}")
+          else
+            res[key] ||= {}
+            res[key][column] = cell
+          end
         end
+
+        # One more row processed
         count += 1
       end
-      @formatter.footer(now, count)
+
+      return ((block_given?) ? count : res)
     end
 
     #----------------------------------------------------------------------------------------

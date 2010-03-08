@@ -188,6 +188,9 @@ module Hbase
       @test_ts = 12345678
       @test_table.put(1, "x:a", 1)
       @test_table.put(1, "x:b", 2, @test_ts)
+
+      @test_table.put(2, "x:a", 11)
+      @test_table.put(2, "x:b", 12, @test_ts)
     end
 
     define_test "count should work w/o a block passed" do
@@ -301,6 +304,110 @@ module Hbase
       assert_kind_of(Hash, res)
       assert_not_nil(res['x:a'])
       assert_not_nil(res['x:b'])
+    end
+
+    define_test "get with a block should yield (column, value) pairs" do
+      res = {}
+      @test_table.get('1') { |col, val| res[col] = val }
+      assert_equal(res.keys.sort, [ 'x:a', 'x:b' ])
+    end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "scan should work w/o any params" do
+      res = @test_table.scan
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['1'])
+      assert_not_nil(res['1']['x:a'])
+      assert_not_nil(res['1']['x:b'])
+      assert_not_nil(res['2'])
+      assert_not_nil(res['2']['x:a'])
+      assert_not_nil(res['2']['x:b'])
+    end
+
+    define_test "scan should support STARTROW parameter" do
+      res = @test_table.scan STARTROW => '2'
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_nil(res['1'])
+      assert_not_nil(res['2'])
+      assert_not_nil(res['2']['x:a'])
+      assert_not_nil(res['2']['x:b'])
+    end
+
+    define_test "scan should support STOPROW parameter" do
+      res = @test_table.scan STOPROW => '2'
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['1'])
+      assert_not_nil(res['1']['x:a'])
+      assert_not_nil(res['1']['x:b'])
+      assert_nil(res['2'])
+    end
+
+    define_test "scan should support LIMIT parameter" do
+      res = @test_table.scan LIMIT => 1
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['1'])
+      assert_not_nil(res['1']['x:a'])
+      assert_not_nil(res['1']['x:b'])
+      assert_nil(res['2'])
+    end
+
+    define_test "scan should support TIMESTAMP parameter" do
+      res = @test_table.scan TIMESTAMP => @test_ts
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['1'])
+      assert_nil(res['1']['x:a'])
+      assert_not_nil(res['1']['x:b'])
+      assert_not_nil(res['2'])
+      assert_nil(res['2']['x:a'])
+      assert_not_nil(res['2']['x:b'])
+    end
+
+    define_test "scan should support COLUMNS parameter with an array of columns" do
+      res = @test_table.scan COLUMNS => [ 'x:a', 'x:b' ]
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['1'])
+      assert_not_nil(res['1']['x:a'])
+      assert_not_nil(res['1']['x:b'])
+      assert_not_nil(res['2'])
+      assert_not_nil(res['2']['x:a'])
+      assert_not_nil(res['2']['x:b'])
+    end
+
+    define_test "scan should support COLUMNS parameter with a single column name" do
+      res = @test_table.scan COLUMNS => 'x:a'
+      assert_not_nil(res)
+      assert_kind_of(Hash, res)
+      assert_not_nil(res['1'])
+      assert_not_nil(res['1']['x:a'])
+      assert_nil(res['1']['x:b'])
+      assert_not_nil(res['2'])
+      assert_not_nil(res['2']['x:a'])
+      assert_nil(res['2']['x:b'])
+    end
+
+    define_test "scan should fail on invalid COLUMNS parameter types" do
+      assert_raise(ArgumentError) do
+        @test_table.scan COLUMNS => {}
+      end
+    end
+
+    define_test "scan should fail on non-hash params" do
+      assert_raise(ArgumentError) do
+        @test_table.scan 123
+      end
+    end
+
+    define_test "scan with a block should yield rows and return rows counter" do
+      rows = {}
+      res = @test_table.scan { |row, cells| rows[row] = cells }
+      assert_equal(rows.keys.size, res)
     end
   end
 end
