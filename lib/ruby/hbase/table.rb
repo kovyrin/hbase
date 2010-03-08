@@ -48,6 +48,33 @@ module Hbase
     end
 
     #----------------------------------------------------------------------------------------------
+    # Count rows in a table
+    def count(interval = 1000)
+      # We can safely set scanner caching with the first key only filter
+      scan = Scan.new
+      scan.cache_blocks = false
+      scan.caching = 10
+      scan.setFilter(FirstKeyOnlyFilter.new)
+
+      # Run the scanner
+      scanner = @table.getScanner(scan)
+      count = 0
+      results = scanner.iterator
+
+      # Iterate results
+      while (results.hasNext)
+        row = results.next
+        count += 1
+        next unless (block_given? && count % interval == 0)
+        # Allow command modules to visualize counting process
+        yield(count, String.from_java_bytes(row.getRow))
+      end
+
+      # Return the counter
+      return count
+    end
+
+    #----------------------------------------------------------------------------------------------
     # Get from table
     def get(row, args = {})
       now = Time.now
@@ -162,27 +189,6 @@ module Hbase
           @formatter.row([row, "column=#{column}, #{cell}"])
         end
         count += 1
-      end
-      @formatter.footer(now, count)
-    end
-
-    def count(interval = 1000)
-      now = Time.now
-      scan = Scan.new()
-      scan.setCacheBlocks(false)
-      # We can safely set scanner caching with the first key only filter
-      scan.setCaching(10)
-      scan.setFilter(FirstKeyOnlyFilter.new)
-      s = @table.getScanner(scan)
-      count = 0
-      i = s.iterator
-      @formatter.header
-      while i.hasNext
-        r = i.next
-        count += 1
-        if count % interval == 0
-          @formatter.row(["Current count: #{count}, row: #{String.from_java_bytes r.getRow}"])
-        end
       end
       @formatter.footer(now, count)
     end
