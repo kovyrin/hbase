@@ -75,65 +75,84 @@ module Hbase
 
     #----------------------------------------------------------------------------------------------
     # Get from table
-    def get(row, args = {})
-      now = Time.now
-      if args == nil or args.length == 0 or (args.length == 1 and args[MAXLENGTH] != nil)
-        get = Get.new(row.to_java_bytes)
-      else
-        # Its a hash.
+    def get(row, *args)
+      get = Get.new(row.to_s.to_java_bytes)
+      maxlength = -1
+
+      # Normalize args
+      args = args.first if args.first.kind_of?(Hash)
+      if args.kind_of?(String) || args.kind_of?(Array)
+        columns = [ args ].flatten.compact
+        args = { COLUMNS => columns }
+      end
+
+      #
+      # Parse arguments
+      #
+      unless args.kind_of?(Hash)
+        raise ArgumentError, "Failed parse of of #{args.inspect}, #{args.class}"
+      end
+
+      # Get maxlength parameter if passed
+      maxlength = args.delete(MAXLENGTH) if args[MAXLENGTH]
+
+      unless args.empty?
         columns = args[COLUMN] || args[COLUMNS]
-        unless columns
-          # May have passed TIMESTAMP and row only; wants all columns from ts.
-          unless ts = args[TIMESTAMP]
-            raise ArgumentError, "Failed parse of #{args.inspect}, #{args.class}"
+        if columns
+          # Normalize types, convert string to an array of strings
+          columns = [ columns ] if columns.is_a?(String)
+
+          # At this point it is either an array or some unsupported stuff
+          unless columns.kind_of?(Array)
+            raise ArgumentError, "Failed parse column argument type #{args.inspect}, #{args.class}"
           end
-          get = Get.new(row.to_java_bytes, ts)
-        else
-          get = Get.new(row.to_java_bytes)
-          # Columns are non-nil
-          if columns.class == String
-            # Single column
-            family, qualifier = parse_column_name(column)
+
+          # Get each column name and add it to the filter
+          columns.each do |column|
+            family, qualifier = parse_column_name(column.to_s)
             if qualifier
               get.addColumn(family, qualifier)
             else
               get.addFamily(family)
             end
-          elsif columns.class == Array
-            columns.each do |column|
-              family, qualifier = parse_column_name(column)
-              if qualifier
-                get.addColumn(family, qualifier)
-              else
-                get.addFamily(family)
-              end
-            end
-          else
-            raise ArgumentError, "Failed parse column argument type #{args.inspect}, #{args.class}"
           end
+
+          # Additional params
           get.setMaxVersions(args[VERSIONS] || 1)
           get.setTimeStamp(args[TIMESTAMP]) if args[TIMESTAMP]
+        else
+          # May have passed TIMESTAMP and row only; wants all columns from ts.
+          unless ts = args[TIMESTAMP]
+            raise ArgumentError, "Failed parse of #{args.inspect}, #{args.class}"
+          end
+
+          # Set the timestamp
+          get.setTimeStamp(ts.to_i)
         end
       end
 
       # Call hbase for the results
       result = @table.get(get)
+      return nil if result.isEmpty
 
       # Print out results.  Result can be Cell or RowResult.
-      maxlength = args[MAXLENGTH] || -1
-      @formatter.header(["COLUMN", "CELL"])
+      res = {}
+      result.list.each do |kv|
+        family = String.from_java_bytes(kv.getFamily)
+        qualifier = Bytes::toStringBinary(kv.getQualifier)
 
-      # Print result rows
-      unless result.isEmpty
-        result.list.each do |kv|
-          family = String.from_java_bytes(kv.getFamily)
-          qualifier = Bytes::toStringBinary(kv.getQualifier)
-          column = "#{family}:#{qualifier}"
-          @formatter.row([column, to_string(column, kv, maxlength)])
+        column = "#{family}:#{qualifier}"
+        value = to_string(column, kv, maxlength)
+
+        if block_given?
+          yield(column, value)
+        else
+          res[column] = value
         end
       end
 
-      @formatter.footer(now)
+      # If block given, we've yielded all the results, otherwise just return them
+      return ((block_given?) ? nil : res)
     end
 
     def scan(args = {})
