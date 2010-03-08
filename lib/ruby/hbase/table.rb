@@ -155,6 +155,8 @@ module Hbase
       return ((block_given?) ? nil : res)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Scans whole table or a range of keys and returns rows matching specific criterias
     def scan(args = {})
       unless args.kind_of?(Hash)
         raise ArgumentError, "Arguments should be a hash. Failed to parse #{args.inspect}, #{args.class}"

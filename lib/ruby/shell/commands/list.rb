@@ -8,7 +8,9 @@ module Shell
       end
 
       def command
-        admin.list
+        format_simple_command do
+          admin.list
+        end
       end
     end
   end

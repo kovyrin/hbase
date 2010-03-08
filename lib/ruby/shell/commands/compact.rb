@@ -9,7 +9,9 @@ module Shell
       end
 
       def command(table_or_region_name)
-        admin.compact(table_or_region_name)
+        format_simple_command do
+          admin.compact(table_or_region_name)
+        end
       end
     end
   end
