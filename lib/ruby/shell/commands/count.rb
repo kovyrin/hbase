@@ -14,7 +14,12 @@ module Shell
       end
 
       def command(table, interval = 1000)
-        table(table).count(interval)
+        now = Time.now
+        formatter.header
+        count = table(table).count(interval) do |cnt, row|
+          formatter.row([ "Current count: #{cnt}, row: #{row}" ])
+        end
+        formatter.footer(now, count)
       end
     end
   end
