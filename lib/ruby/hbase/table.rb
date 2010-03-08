@@ -196,6 +196,7 @@ module Hbase
     #----------------------------------------------------------------------------------------
     # Helper methods
 
+    # Returns a list of column names in the table
     def get_all_columns
       @table.table_descriptor.getFamilies.map do |family|
         "#{family.getNameAsString}:"
