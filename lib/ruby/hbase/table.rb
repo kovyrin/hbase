@@ -59,11 +59,10 @@ module Hbase
       # Run the scanner
       scanner = @table.getScanner(scan)
       count = 0
-      results = scanner.iterator
 
       # Iterate results
-      while (results.hasNext)
-        row = results.next
+      while (scanner.iterator.hasNext)
+        row = scanner.iterator.next
         count += 1
         next unless (block_given? && count % interval == 0)
         # Allow command modules to visualize counting process
