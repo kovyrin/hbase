@@ -10,7 +10,9 @@ module Shell
       end
 
       def command(region_name)
-        admin.enable_region(region_name)
+        format_simple_command do
+          admin.enable_region(region_name)
+        end
       end
     end
   end
