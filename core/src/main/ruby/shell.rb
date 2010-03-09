@@ -137,7 +137,7 @@ module Shell
     end
 
     def help_header
-      return "There are few groups of commands in Hbase\n\n" +
+      return "There are few groups of commands in HBase\n\n" +
              "Use help 'group_name' (e.g. help 'general') to get help on all commands in a group\n" +
              "Use help 'command' (e.g. help 'get') to get help on a specific command"
     end
