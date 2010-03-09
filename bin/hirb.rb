@@ -18,9 +18,13 @@ include Java
 # Some goodies for hirb. Should these be left up to the user's discretion?
 require 'irb/completion'
 
-# Add the $HBASE_HOME/lib/ruby directory to the ruby
-# load path so I can load up my HBase ruby modules
-$LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "lib", "ruby")
+# Add the $HBASE_HOME/lib/ruby OR $HBASE_HOME/core/src/main/ruby/lib directory
+# to the ruby load path so I can load up my HBase ruby modules
+if File.exists?(File.join(File.dirname(File.dirname(__FILE__)), "lib", "ruby"))
+  $LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "lib", "ruby")
+else
+  $LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "core", "src", "main", "ruby")
+end
 
 #
 # FIXME: Switch args processing to getopt

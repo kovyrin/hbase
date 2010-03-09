@@ -1,4 +1,4 @@
-require 'test/test_helper'
+require 'test_helper'
 require 'shell/formatter'
 
 class ShellFormatterTest < Test::Unit::TestCase

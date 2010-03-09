@@ -1,5 +1,8 @@
 include Java
-require "lib/ruby/test/test_helper"
+$LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "core", "src", "main", "ruby")
+$LOAD_PATH.unshift File.join(File.dirname(File.dirname(__FILE__)), "core", "src", "test", "ruby")
+
+require "test_helper"
 
 # Set logging level to avoid verboseness
 org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(org.apache.log4j.Level::ERROR)
