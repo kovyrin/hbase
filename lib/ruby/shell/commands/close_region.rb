@@ -11,7 +11,9 @@ module Shell
       end
 
       def command(region_name, server = nil)
-        admin.close_region(region_name, server)
+        format_simple_command do
+          admin.close_region(region_name, server)
+        end
       end
     end
   end

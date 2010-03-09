@@ -131,7 +131,7 @@ module Hbase
       end
     end
 
-    define_test "should work with string column args" do
+    define_test "create should work with string column args" do
       if admin.exists?(@create_test_name)
         admin.disable(@create_test_name)
         admin.drop(@create_test_name)
@@ -140,13 +140,36 @@ module Hbase
       assert_equal(['a:', 'b:'], table(@create_test_name).get_all_columns.sort)
      end
 
-    define_test "should work with hash column args" do
+    define_test "create hould work with hash column args" do
       if admin.exists?(@create_test_name)
         admin.disable(@create_test_name)
         admin.drop(@create_test_name)
       end
       admin.create(@create_test_name, { NAME => 'a'}, { NAME => 'b'})
       assert_equal(['a:', 'b:'], table(@create_test_name).get_all_columns.sort)
+    end
+
+    #-------------------------------------------------------------------------------
+
+#    define_test "close should work without region server name" do
+#      if admin.exists?(@create_test_name)
+#        admin.disable(@create_test_name)
+#        admin.drop(@create_test_name)
+#      end
+#      admin.create(@create_test_name, 'foo')
+#      admin.close_region(@create_test_name + ',,0')
+#    end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "describe should fail for non-existent tables" do
+      assert_raise(ArgumentError) do
+        admin.describe('.NOT.EXISTS.')
+      end
+    end
+
+    define_test "describe should return a description" do
+      assert_not_nil admin.describe(@test_name)
     end
   end
 end

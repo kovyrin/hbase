@@ -110,67 +110,37 @@ module Hbase
       @admin.createTable(htd)
     end
 
-    def close_region(region_name, server)
-      now = Time.now
-      s = nil
-      s = [server].to_java if server
-      @admin.closeRegion(region_name, s)
-      @formatter.header
-      @formatter.footer(now)
+    #----------------------------------------------------------------------------------------------
+    # Closes a region
+    def close_region(region_name, server = nil)
+      @admin.closeRegion(region_name, server ? [server].to_java : nil)
     end
 
-    def describe(table_name)
-      now = Time.now
-      @formatter.header(["DESCRIPTION", "ENABLED"], [64])
-      found = false
-
-      tables = @admin.listTables().to_a
-      tables << HTableDescriptor::META_TABLEDESC
-      tables << HTableDescriptor::ROOT_TABLEDESC
-
-      tables.each do |t|
-        if t.getNameAsString == table_name
-          @formatter.row([ t.to_s, enabled?(table_name).to_s ], true, [ 64 ])
-          found = true
-          break
-        end
-      end
-      raise(ArgumentError, "Failed to find table named #{table_name}") unless found
-
-      @formatter.footer(now)
-    end
-
+    #----------------------------------------------------------------------------------------------
+    # Enables a region
     def enable_region(region_name)
       online(region_name, false)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Disables a region
     def disable_region(region_name)
       online(region_name, true)
     end
 
-    def online(region_name, on_off)
-      now = Time.now
+    #----------------------------------------------------------------------------------------------
+    # Returns table's structure description
+    def describe(table_name)
+      tables = @admin.listTables.to_a
+      tables << HTableDescriptor::META_TABLEDESC
+      tables << HTableDescriptor::ROOT_TABLEDESC
 
-      # Open meta table
-      meta = HTable.new(HConstants::META_TABLE_NAME)
+      tables.each do |t|
+        # Found the table
+        return t.to_s if t.getNameAsString == table_name
+      end
 
-      # Read region info
-      region_bytes = Bytes.toBytes(region_name)
-      g = Get.new(region_bytes)
-      g.addColumn(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER)
-      hri_bytes = meta.get(g).value
-
-      # Change region status
-      hri = Writables.getWritable(hri_bytes, HRegionInfo.new)
-      hri.setOffline(on_off)
-
-      # Write it back
-      put = Put.new(region_bytes)
-      put.add(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER, Writables.getBytes(hri))
-      meta.put(put)
-
-      @formatter.header
-      @formatter.footer(now)
+      raise(ArgumentError, "Failed to find table named #{table_name}")
     end
 
     def truncate(table_name)
@@ -311,5 +281,27 @@ module Hbase
         arg[HColumnDescriptor::REPLICATION_SCOPE]? JInteger.new(arg[REPLICATION_SCOPE]): HColumnDescriptor::DEFAULT_REPLICATION_SCOPE)
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Enables/disables a region by name
+    def online(region_name, on_off)
+      # Open meta table
+      meta = HTable.new(HConstants::META_TABLE_NAME)
+
+      # Read region info
+      # FIXME: fail gracefully if can't find the region
+      region_bytes = Bytes.toBytes(region_name)
+      g = Get.new(region_bytes)
+      g.addColumn(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER)
+      hri_bytes = meta.get(g).value
+
+      # Change region status
+      hri = Writables.getWritable(hri_bytes, HRegionInfo.new)
+      hri.setOffline(on_off)
+
+      # Write it back
+      put = Put.new(region_bytes)
+      put.add(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER, Writables.getBytes(hri))
+      meta.put(put)
+    end
   end
 end
