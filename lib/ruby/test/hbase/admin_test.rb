@@ -171,5 +171,24 @@ module Hbase
     define_test "describe should return a description" do
       assert_not_nil admin.describe(@test_name)
     end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "truncate should empty a table" do
+      table(@test_name).put(1, "x:a", 1)
+      table(@test_name).put(2, "x:a", 2)
+      assert_equal(2, table(@test_name).count)
+      admin.truncate(@test_name)
+      assert_equal(0, table(@test_name).count)
+    end
+
+    define_test "truncate should yield log records" do
+      logs = []
+      admin.truncate(@test_name) do |log|
+        assert_kind_of(String, log)
+        logs << log
+      end
+      assert(!logs.empty?)
+    end
   end
 end
