@@ -1,4 +1,3 @@
-require 'test_helper'
 require 'hbase'
 require 'hbase/test_helper'
 
