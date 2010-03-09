@@ -14,8 +14,22 @@ module Hbase
     end
 
     def create_test_table(name)
-      admin.create name, [{'NAME' => 'x', 'VERSIONS' => 5}] unless admin.exists?(name)
-      admin.enable(name) unless admin.enabled?(name)
+      # Create the table if needed
+      unless admin.exists?(name)
+        admin.create name, [{'NAME' => 'x', 'VERSIONS' => 5}, 'y']
+        return
+      end
+
+      # Enable the table if needed
+      unless admin.enabled?(name)
+        admin.enable(name)
+      end
+    end
+
+    def drop_test_table(name)
+      return unless admin.exists?(name)
+      admin.disable(name) if admin.enabled?(name)
+      admin.drop(name)
     end
   end
 end

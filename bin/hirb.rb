@@ -108,22 +108,8 @@ def tools
   @shell.help_group('tools')
 end
 
-# Promote hbase constants to be constants of this module so can
-# be used bare as keys in 'create', 'alter', etc. To see constants
-# in IRB, type 'Object.constants'. Don't promote defaults because
-# flattens all types to String.  Can be confusing.
-def promote_constants(constants)
-  # The constants to import are all in uppercase
-  constants.each do |c|
-    next if c =~ /DEFAULT_.*/ || c != c.upcase
-    next if eval("defined?(#{c})")
-    eval("#{c} = '#{c}'")
-  end
-end
-
-promote_constants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
-promote_constants(org.apache.hadoop.hbase.HTableDescriptor.constants)
-promote_constants(HBaseConstants.constants)
+# Include hbase constants
+include HBaseConstants
 
 # If script2run, try running it.  Will go on to run the shell unless
 # script calls 'exit' or 'exit 0' or 'exit errcode'.

@@ -46,6 +46,19 @@ module HBaseConstants
   MAXLENGTH = "MAXLENGTH"
   CACHE_BLOCKS = "CACHE_BLOCKS"
   REPLICATION_SCOPE = "REPLICATION_SCOPE"
+
+  # Load constants from hbase java API
+  def self.promote_constants(constants)
+    # The constants to import are all in uppercase
+    constants.each do |c|
+      next if c =~ /DEFAULT_.*/ || c != c.upcase
+      next if eval("defined?(#{c})")
+      eval("#{c} = '#{c}'")
+    end
+  end
+
+  promote_constants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
+  promote_constants(org.apache.hadoop.hbase.HTableDescriptor.constants)
 end
 
 # Include classes definition
