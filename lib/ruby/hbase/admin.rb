@@ -143,19 +143,19 @@ module Hbase
       raise(ArgumentError, "Failed to find table named #{table_name}")
     end
 
+    #----------------------------------------------------------------------------------------------
+    # Truncates table (deletes all records by recreating the table)
     def truncate(table_name)
-      now = Time.now
-      @formatter.header
       h_table = HTable.new(table_name)
       table_description = h_table.getTableDescriptor()
-      puts 'Truncating ' + table_name + '; it may take a while'
-      puts 'Disabling table...'
+      yield 'Disabling table...' if block_given?
       disable(table_name)
-      puts 'Dropping table...'
+
+      yield 'Dropping table...' if block_given?
       drop(table_name)
-      puts 'Creating table...'
+
+      yield 'Creating table...' if block_given?
       @admin.createTable(table_description)
-      @formatter.footer(now)
     end
 
     def alter(table_name, args)
