@@ -1,6 +1,6 @@
-require 'test/test_helper'
+require 'test_helper'
 require 'hbase'
-require 'shell/formatter'
+require 'hbase/test_helper'
 
 module Hbase
   class HbaseTest < Test::Unit::TestCase

@@ -1,6 +1,6 @@
-require 'test/unit'
+require 'test_helper'
 require 'hbase'
-require 'test/hbase/test_helper'
+require 'hbase/test_helper'
 
 include HBaseConstants
 
