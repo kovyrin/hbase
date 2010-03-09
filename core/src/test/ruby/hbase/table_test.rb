@@ -1,5 +1,4 @@
 require 'hbase'
-require 'hbase/test_helper'
 
 include HBaseConstants
 
