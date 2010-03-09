@@ -1,4 +1,3 @@
-require 'test_helper'
 require 'shell'
 require 'shell/formatter'
 

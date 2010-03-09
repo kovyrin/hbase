@@ -25,5 +25,5 @@ Test::Unit::TestCase.extend(Testing::Declarative)
 
 # Add the $HBASE_HOME/lib/ruby directory to the ruby
 # load path so I can load up my HBase ruby modules
-$LOAD_PATH.unshift File.dirname(File.dirname(__FILE__))
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "..", "main", "ruby")
 
