@@ -35,7 +35,7 @@ module Hbase
   end
 
     # Simple administration methods tests
-  class AdminSimpleMethodsTest < Test::Unit::TestCase
+  class AdminMethodsTest < Test::Unit::TestCase
     include TestHelpers
 
     def setup
@@ -122,29 +122,20 @@ module Hbase
     end
 
     define_test "create should fail without columns" do
-      if admin.exists?(@create_test_name)
-        admin.disable(@create_test_name)
-        admin.drop(@create_test_name)
-      end
+      drop_test_table(@create_test_name)
       assert_raise(ArgumentError) do
         admin.create(@create_test_name)
       end
     end
 
     define_test "create should work with string column args" do
-      if admin.exists?(@create_test_name)
-        admin.disable(@create_test_name)
-        admin.drop(@create_test_name)
-      end
+      drop_test_table(@create_test_name)
       admin.create(@create_test_name, 'a', 'b')
       assert_equal(['a:', 'b:'], table(@create_test_name).get_all_columns.sort)
      end
 
     define_test "create hould work with hash column args" do
-      if admin.exists?(@create_test_name)
-        admin.disable(@create_test_name)
-        admin.drop(@create_test_name)
-      end
+      drop_test_table(@create_test_name)
       admin.create(@create_test_name, { NAME => 'a'}, { NAME => 'b'})
       assert_equal(['a:', 'b:'], table(@create_test_name).get_all_columns.sort)
     end
@@ -189,6 +180,86 @@ module Hbase
         logs << log
       end
       assert(!logs.empty?)
+    end
+  end
+
+ # Simple administration methods tests
+  class AdminAlterTableTest < Test::Unit::TestCase
+    include TestHelpers
+
+    def setup
+      setup_hbase
+      # Create test table if it does not exist
+      @test_name = "hbase_shell_tests_table"
+      drop_test_table(@test_name)
+      create_test_table(@test_name)
+    end
+
+    #-------------------------------------------------------------------------------
+
+    define_test "alter should fail with non-string table names" do
+      assert_raise(ArgumentError) do
+        admin.alter(123, METHOD => 'delete', NAME => 'y')
+      end
+    end
+
+    define_test "alter should fail with non-existing tables" do
+      assert_raise(ArgumentError) do
+        admin.alter('.NOT.EXISTS.', METHOD => 'delete', NAME => 'y')
+      end
+    end
+
+    define_test "alter should fail with enabled tables" do
+      assert_raise(ArgumentError) do
+        admin.alter(@test_name, METHOD => 'delete', NAME => 'y')
+      end
+    end
+
+    define_test "alter should be able to delete column families" do
+      assert_equal(['x:', 'y:'], table(@test_name).get_all_columns.sort)
+      admin.disable(@test_name)
+      admin.alter(@test_name, METHOD => 'delete', NAME => 'y')
+      admin.enable(@test_name)
+      assert_equal(['x:'], table(@test_name).get_all_columns.sort)
+    end
+
+    define_test "alter should be able to add column families" do
+      assert_equal(['x:', 'y:'], table(@test_name).get_all_columns.sort)
+      admin.disable(@test_name)
+      admin.alter(@test_name, NAME => 'z')
+      admin.enable(@test_name)
+      assert_equal(['x:', 'y:', 'z:'], table(@test_name).get_all_columns.sort)
+    end
+
+    define_test "alter should be able to add column families (name-only alter spec)" do
+      assert_equal(['x:', 'y:'], table(@test_name).get_all_columns.sort)
+      admin.disable(@test_name)
+      admin.alter(@test_name, 'z')
+      admin.enable(@test_name)
+      assert_equal(['x:', 'y:', 'z:'], table(@test_name).get_all_columns.sort)
+    end
+
+    define_test "alter should support more than one alteration in one call" do
+      assert_equal(['x:', 'y:'], table(@test_name).get_all_columns.sort)
+      admin.disable(@test_name)
+      admin.alter(@test_name, { NAME => 'z' }, { METHOD => 'delete', NAME => 'y' })
+      admin.enable(@test_name)
+      assert_equal(['x:', 'z:'], table(@test_name).get_all_columns.sort)
+    end
+
+    define_test 'alter should support shortcut DELETE alter specs' do
+      assert_equal(['x:', 'y:'], table(@test_name).get_all_columns.sort)
+      admin.disable(@test_name)
+      admin.alter(@test_name, 'delete' => 'y')
+      admin.disable(@test_name)
+      assert_equal(['x:'], table(@test_name).get_all_columns.sort)
+    end
+
+    define_test "alter should be able to change table options" do
+      admin.disable(@test_name)
+      admin.alter(@test_name, METHOD => 'table_att', 'MAX_FILESIZE' => 12345678)
+      admin.disable(@test_name)
+      assert_match(/12345678/, admin.describe(@test_name))
     end
   end
 end

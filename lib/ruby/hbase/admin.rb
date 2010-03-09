@@ -158,32 +158,66 @@ module Hbase
       @admin.createTable(table_description)
     end
 
-    def alter(table_name, args)
-      now = Time.now
+    #----------------------------------------------------------------------------------------------
+    # Change table structure or table options
+    def alter(table_name, *args)
+      # Table name should be a string
+      raise(ArgumentError, "Table name must be of type String") unless table_name.kind_of?(String)
 
-      raise(TypeError, "Table name must be of type String") unless table_name.instance_of?(String)
+      # Table should exist
+      raise(ArgumentError, "Can't find a table: #{table_name}") unless exists?(table_name)
+
+      # Table should be disabled
+      raise(ArgumentError, "Table #{table_name} is enabled. Disable it first before altering.") if enabled?(table_name)
+
+      # There should be at least one argument
+      raise(ArgumentError, "There should be at least one argument but the table name") if args.empty?
+
+      # Get table descriptor
       htd = @admin.getTableDescriptor(table_name.to_java_bytes)
-      method = args.delete(METHOD)
 
-      if method == "delete"
-        @admin.deleteColumn(table_name, args[NAME])
-      elsif method == "table_att"
-        htd.setMaxFileSize(JLong.valueOf(args[MAX_FILESIZE])) if args[MAX_FILESIZE]
-        htd.setReadOnly(JBoolean.valueOf(args[READONLY])) if args[READONLY]
-        htd.setMemStoreFlushSize(JLong.valueOf(args[MEMSTORE_FLUSHSIZE])) if args[MEMSTORE_FLUSHSIZE]
-        htd.setDeferredLogFlush(JBoolean.valueOf(args[DEFERRED_LOG_FLUSH])) if args[DEFERRED_LOG_FLUSH]
-        @admin.modifyTable(table_name.to_java_bytes, htd)
-      else
-        descriptor = hcd(args)
-        if htd.hasFamily(descriptor.getNameAsString.to_java_bytes)
-          @admin.modifyColumn(table_name, descriptor.getNameAsString, descriptor);
-        else
-          @admin.addColumn(table_name, descriptor);
+      # Process all args
+      args.each do |arg|
+        # Normalize args to support column name only alter specs
+        arg = { NAME => arg } if arg.kind_of?(String)
+
+        # Normalize args to support shortcut delete syntax
+        arg = { METHOD => 'delete', NAME => arg['delete'] } if arg['delete']
+
+        # No method parameter, try to use the args as a column definition
+        unless method = arg.delete(METHOD)
+          descriptor = hcd(arg)
+          column_name = descriptor.getNameAsString
+
+          # If column already exist, then try to alter it. Create otherwise.
+          if htd.hasFamily(column_name.to_java_bytes)
+            @admin.modifyColumn(table_name, column_name, descriptor)
+          else
+            @admin.addColumn(table_name, descriptor)
+          end
+          next
         end
-      end
 
-      @formatter.header
-      @formatter.footer(now)
+        # Delete column family
+        if method == "delete"
+          raise(ArgumentError, "NAME parameter missing for delete method") unless arg[NAME]
+          @admin.deleteColumn(table_name, arg[NAME])
+          next
+        end
+
+        # Change table attributes
+        if method == "table_att"
+          htd.setMaxFileSize(JLong.valueOf(arg[MAX_FILESIZE])) if arg[MAX_FILESIZE]
+          htd.setReadOnly(JBoolean.valueOf(arg[READONLY])) if arg[READONLY]
+          htd.setMemStoreFlushSize(JLong.valueOf(arg[MEMSTORE_FLUSHSIZE])) if arg[MEMSTORE_FLUSHSIZE]
+          htd.setDeferredLogFlush(JBoolean.valueOf(arg[DEFERRED_LOG_FLUSH])) if arg[DEFERRED_LOG_FLUSH]
+          @admin.modifyTable(table_name.to_java_bytes, htd)
+          next
+        end
+
+        # Unknown method
+        raise ArgumentError, "Unknown method: #{method}"
+      end
     end
 
     def status(format)
@@ -230,12 +264,6 @@ module Hbase
       else
         puts "#{status.getServers} servers, #{status.getDeadServers} dead, #{'%.4f' % status.getAverageLoad} average load"
       end
-    end
-
-    def zk(args)
-      line = args.join(' ')
-      line = 'help' if line.empty?
-      @zk_main.executeLine(line)
     end
 
     #----------------------------------------------------------------------------------------------
@@ -302,6 +330,13 @@ module Hbase
       put = Put.new(region_bytes)
       put.add(HConstants::CATALOG_FAMILY, HConstants::REGIONINFO_QUALIFIER, Writables.getBytes(hri))
       meta.put(put)
+    end
+    #----------------------------------------------------------------------------------------------
+    # Invoke a ZooKeeper maintenance command
+    def zk(args)
+      line = args.join(' ')
+      line = 'help' if line.empty?
+      @zk_main.executeLine(line)
     end
   end
 end
