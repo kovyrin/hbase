@@ -1,3 +1,12 @@
+include Java
+
+java_import org.apache.hadoop.hbase.client.HBaseAdmin
+java_import org.apache.zookeeper.ZooKeeperMain
+java_import org.apache.hadoop.hbase.HColumnDescriptor
+java_import org.apache.hadoop.hbase.HTableDescriptor
+java_import org.apache.hadoop.hbase.HRegionInfo
+java_import org.apache.zookeeper.ZooKeeper
+
 # Wrapper for org.apache.hadoop.hbase.client.HBaseAdmin
 
 module Hbase

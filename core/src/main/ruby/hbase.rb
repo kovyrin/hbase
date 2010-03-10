@@ -8,28 +8,13 @@
 # whether the table exists and returns nil regardless.
 include Java
 
+java_import org.apache.hadoop.hbase.HConstants
+java_import org.apache.hadoop.hbase.HColumnDescriptor
+java_import org.apache.hadoop.hbase.HTableDescriptor
+
 include_class('java.lang.Integer') {|package,name| "J#{name}" }
 include_class('java.lang.Long') {|package,name| "J#{name}" }
 include_class('java.lang.Boolean') {|package,name| "J#{name}" }
-
-import org.apache.hadoop.hbase.KeyValue
-import org.apache.hadoop.hbase.client.HBaseAdmin
-import org.apache.hadoop.hbase.client.HTable
-import org.apache.hadoop.hbase.client.Get
-import org.apache.hadoop.hbase.client.Put
-import org.apache.hadoop.hbase.client.Scan
-import org.apache.hadoop.hbase.client.Delete
-import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter
-import org.apache.hadoop.hbase.HConstants
-import org.apache.hadoop.hbase.io.hfile.Compression
-import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.hadoop.hbase.HColumnDescriptor
-import org.apache.hadoop.hbase.HTableDescriptor
-import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase.util.Writables
-import org.apache.hadoop.hbase.HRegionInfo
-import org.apache.zookeeper.ZooKeeper
-import org.apache.zookeeper.ZooKeeperMain
 
 module HBaseConstants
   COLUMN = "COLUMN"
@@ -57,8 +42,8 @@ module HBaseConstants
     end
   end
 
-  promote_constants(org.apache.hadoop.hbase.HColumnDescriptor.constants)
-  promote_constants(org.apache.hadoop.hbase.HTableDescriptor.constants)
+  promote_constants(HColumnDescriptor.constants)
+  promote_constants(HTableDescriptor.constants)
 end
 
 # Include classes definition

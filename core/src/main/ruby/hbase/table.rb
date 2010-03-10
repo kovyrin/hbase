@@ -1,3 +1,18 @@
+include Java
+
+java_import org.apache.hadoop.hbase.client.HTable
+
+java_import org.apache.hadoop.hbase.KeyValue
+java_import org.apache.hadoop.hbase.util.Bytes
+java_import org.apache.hadoop.hbase.util.Writables
+
+java_import org.apache.hadoop.hbase.client.Put
+java_import org.apache.hadoop.hbase.client.Get
+java_import org.apache.hadoop.hbase.client.Delete
+
+java_import org.apache.hadoop.hbase.client.Scan
+java_import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter
+
 # Wrapper for org.apache.hadoop.hbase.client.HTable
 
 module Hbase
