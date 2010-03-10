@@ -50,8 +50,16 @@ module Hbase
 
     def drop_test_table(name)
       return unless admin.exists?(name)
-      admin.disable(name) if admin.enabled?(name)
-      admin.drop(name)
+      begin
+        admin.disable(name) if admin.enabled?(name)
+      rescue => e
+        puts "IGNORING DISABLE TABLE ERROR: #{e}"
+      end
+      begin
+        admin.drop(name)
+      rescue => e
+        puts "IGNORING DROP TABLE ERROR: #{e}"
+      end
     end
   end
 end
