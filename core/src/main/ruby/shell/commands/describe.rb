@@ -10,7 +10,9 @@ module Shell
 
       def command(table)
         now = Time.now
+
         desc = admin.describe(table)
+
         formatter.header([ "DESCRIPTION", "ENABLED" ], [ 64 ])
         formatter.row([ desc, admin.enabled?(table).to_s ], true, [ 64 ])
         formatter.footer(now)
