@@ -7,11 +7,12 @@ module Shell
         self.shell = shell
       end
 
-      def command_safe(*args)
+      def command_safe(debug, *args)
         command(*args)
-      rescue ArgumentError => e
+      rescue => e
         puts
         puts "ERROR: #{e}"
+        puts "Backtrace: #{e.backtrace.join("\n           ")}" if debug
         puts
         puts "Here is some help for this command:"
         puts help
@@ -39,6 +40,10 @@ module Shell
         yield
         formatter.header
         formatter.footer(now)
+      end
+
+      def check_table(table)
+        raise ArgumentError, "Unknown table #{table}!" unless admin.exists?(table)
       end
     end
   end

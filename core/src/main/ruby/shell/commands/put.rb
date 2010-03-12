@@ -12,6 +12,7 @@ module Shell
       end
 
       def command(table, row, column, value, timestamp = nil)
+        check_table(table)
         format_simple_command do
           table(table).put(row, column, value, timestamp)
         end

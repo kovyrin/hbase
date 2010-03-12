@@ -14,6 +14,7 @@ module Shell
       end
 
       def command(table, interval = 1000)
+        check_table(table)
         now = Time.now
         formatter.header
         count = table(table).count(interval) do |cnt, row|
