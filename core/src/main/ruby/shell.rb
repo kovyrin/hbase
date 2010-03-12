@@ -10,8 +10,6 @@ module Shell
     @@command_groups
   end
 
-  #----------------------------------------------------------------------
-
   def self.load_command(name, group)
     return if commands[name]
 
