@@ -23,7 +23,6 @@ module Shell
       end
 
       def command(table, args = {})
-        check_table(table)
         now = Time.now
         formatter.header(["ROW", "COLUMN+CELL"])
 

@@ -11,7 +11,6 @@ module Shell
       end
 
       def command(table)
-        check_table(table)
         format_simple_command do
           admin.drop(table)
         end

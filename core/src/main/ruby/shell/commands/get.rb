@@ -18,7 +18,6 @@ module Shell
       end
 
       def command(table, row, *args)
-        check_table(table)
         now = Time.now
         formatter.header(["COLUMN", "CELL"])
 

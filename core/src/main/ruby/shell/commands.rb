@@ -8,7 +8,7 @@ module Shell
       end
 
       def command_safe(debug, *args)
-        command(*args)
+        translate_hbase_exceptions(*args) { command(*args) }
       rescue => e
         puts
         puts "ERROR: #{e}"
@@ -42,8 +42,13 @@ module Shell
         formatter.footer(now)
       end
 
-      def check_table(table)
-        raise ArgumentError, "Unknown table #{table}!" unless admin.exists?(table)
+      def translate_hbase_exceptions(*args)
+        yield
+      rescue org.apache.hadoop.hbase.TableNotFoundException
+        raise "Unknown table #{args.first}!"
+      rescue org.apache.hadoop.hbase.regionserver.NoSuchColumnFamilyException
+        valid_cols = table(args.first).get_all_columns.map { |c| c + '*' }
+        raise "Unknown column family! Valid column names: #{valid_cols.join(", ")}"
       end
     end
   end

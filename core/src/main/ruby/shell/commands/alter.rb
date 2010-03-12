@@ -29,7 +29,6 @@ module Shell
       end
 
       def command(table, *args)
-        check_table(table)
         format_simple_command do
           admin.alter(table, *args)
         end

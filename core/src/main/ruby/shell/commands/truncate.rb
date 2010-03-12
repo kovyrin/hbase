@@ -8,7 +8,6 @@ module Shell
       end
 
       def command(table)
-        check_table(table)
         format_simple_command do
           puts "Truncating '#{table}' table (it may take a while):"
           admin.truncate(table) { |log| puts " - #{log}" }

@@ -9,7 +9,6 @@ module Shell
       end
 
       def command(table)
-        check_table(table)
         now = Time.now
         desc = admin.describe(table)
         formatter.header([ "DESCRIPTION", "ENABLED" ], [ 64 ])
