@@ -2,6 +2,7 @@
 /.externalToolBuilders
 /.project
 /.settings
+/.idea
 /build
 /logs
 /target
