@@ -54,5 +54,9 @@ to call at top-level: ant compile-core-test
       </fileset>
     </copy>
   </target>
+
+  <target name="compile-test" depends="compile">
+    <echo message="contrib: ${name}"/>
+  </target>
  
 </project>
