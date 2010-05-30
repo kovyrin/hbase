@@ -1,6 +1,24 @@
+#
+# Copyright 2009 The Apache Software Foundation
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # Script adds a table back to a running hbase.
-# Currently only works on a copied aside table.
-# You cannot parse arbitrary table name.
+# Currently only works on if table data is in place.
 # 
 # To see usage for this script, run: 
 #
@@ -51,11 +69,15 @@ end
 # Get cmdline args.
 srcdir = fs.makeQualified(Path.new(java.lang.String.new(ARGV[0])))
 
+if not fs.exists(srcdir)
+  raise IOError.new("src dir " + srcdir.toString() + " doesn't exist!")
+end
+
 # Get table name
 tableName = nil
 if ARGV.size > 1
   tableName = ARGV[1]
-  raise IOError("Not supported yet")
+  raise IOError.new("Not supported yet")
 elsif
   # If none provided use dirname
   tableName = srcdir.getName()
@@ -83,14 +105,15 @@ end
 # Scan the .META. and remove all lines that begin with tablename
 LOG.info("Deleting mention of " + tableName + " from .META.")
 metaTable = HTable.new(c, HConstants::META_TABLE_NAME)
-scan = Scan.new(tableName.to_java_bytes)
+tableNameMetaPrefix = tableName + HConstants::META_ROW_DELIMITER.chr
+scan = Scan.new((tableNameMetaPrefix + HConstants::META_ROW_DELIMITER.chr).to_java_bytes)
 scanner = metaTable.getScanner(scan)
 # Use java.lang.String doing compares.  Ruby String is a bit odd.
 tableNameStr = java.lang.String.new(tableName)
 while (result = scanner.next())
   rowid = Bytes.toString(result.getRow())
   rowidStr = java.lang.String.new(rowid)
-  if not rowidStr.startsWith(tableNameStr)
+  if not rowidStr.startsWith(tableNameMetaPrefix)
     # Gone too far, break
     break
   end
